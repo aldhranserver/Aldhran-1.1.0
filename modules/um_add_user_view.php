@@ -1,7 +1,23 @@
 <div class="um-editor-container" style="animation: fadeIn 0.3s ease;">
     <h2 class="um-internal-title" style="color: var(--glow-gold);">Create New User Entry</h2>
     
-    <form action="modules/um_sync_worker.php" method="POST">
+    <form id="um_create_user_form" onsubmit="event.preventDefault(); 
+                    const fd = new FormData(this); 
+                    fd.append('csrf_token', '<?php echo generateToken(); ?>');
+                    fetch('modules/um_sync_worker.php', {
+                        method: 'POST',
+                        body: fd
+                    })
+                    .then(r => r.text())
+                    .then(t => { 
+                        if(t.trim() === 'SUCCESS') {
+                            alert('Protocol executed: User created.');
+                            loadCategory('all');
+                        } else {
+                            alert('Protocol Error: ' + t);
+                        }
+                    });">
+        
         <input type="hidden" name="um_action" value="create_user">
         <input type="hidden" name="can_edit" value="1">
 
@@ -18,7 +34,7 @@
                 <label style="font-size: 0.8em; color: #888; text-transform: uppercase;">Initial Password</label>
                 <input type="password" name="u_pass" class="um-input-search-glow" required style="width: 100%; margin-bottom:15px;" placeholder="••••••••">
                 
-                <label style="font-size: 0.8em; color: #888; text-transform: uppercase;">Berechtigungsstufe (BS)</label>
+                <label style="font-size: 0.8em; color: #888; text-transform: uppercase;">Access-Level (BS)</label>
                 <select name="u_priv" class="um-input-search-glow" style="width: 100%;">
                     <option value="1">BS: 1 - Player</option>
                     <option value="2">BS: 2 - Councillor</option>
@@ -35,7 +51,7 @@
                 ← Abort Mission
             </button>
             <button type="submit" class="btn-add-user" style="width: 280px; letter-spacing: 1px;">
-                EXECUTE CREATION PROTOCOL
+                Add User
             </button>
         </div>
     </form>
