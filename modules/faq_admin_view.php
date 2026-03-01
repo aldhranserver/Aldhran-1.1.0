@@ -1,10 +1,11 @@
 <?php
 /**
- * FAQ ADMIN MANAGER
- * Version: 1.0.0 - Standalone (No Forum)
+ * FAQ ADMIN MANAGER - Aldhran Enterprise
+ * Version: 2.0.0 - SECURITY: PDO Migration & Audit Logging
  */
+if (!defined('IN_CMS')) exit;
 
-// Sicherheit: Admin-Check
+// Sicherheit: Admin-Check via globalem $db (PDO)
 if (!isset($_SESSION['user_id']) || (int)$_SESSION['priv_level'] < 4) {
     echo "<div class='admin-box'>Access Denied. Insufficient Privileges.</div>";
     return;
@@ -16,25 +17,41 @@ $message = "";
 
 // Speichern (Neu oder Update)
 if (isset($_POST['save_faq'])) {
-    $id = (int)$_POST['id'];
-    $cat = mysqli_real_escape_string($conn, $_POST['category']);
-    $ques = mysqli_real_escape_string($conn, $_POST['question']);
-    $ans = mysqli_real_escape_string($conn, $_POST['answer']);
+    // Enterprise V2: CSRF Check
+    checkToken($_POST['csrf_token'] ?? '');
+
+    $id   = (int)$_POST['id'];
+    $cat  = trim($_POST['category'] ?? '');
+    $ques = trim($_POST['question'] ?? '');
+    $ans  = trim($_POST['answer'] ?? '');
     $sort = (int)$_POST['sort_order'];
 
     if ($id > 0) {
-        $conn->query("UPDATE faq SET category='$cat', question='$ques', answer='$ans', sort_order=$sort WHERE id=$id");
+        // Update via PDO
+        $stmt = $db->prepare("UPDATE faq SET category = ?, question = ?, answer = ?, sort_order = ? WHERE id = ?");
+        $stmt->execute([$cat, $ques, $ans, $sort, $id]);
+        
+        aldhran_log("FAQ_UPDATE", "Updated FAQ entry #$id", $_SESSION['user_id']);
         $message = "Entry updated successfully.";
     } else {
-        $conn->query("INSERT INTO faq (category, question, answer, sort_order) VALUES ('$cat', '$ques', '$ans', $sort)");
+        // Insert via PDO
+        $stmt = $db->prepare("INSERT INTO faq (category, question, answer, sort_order) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$cat, $ques, $ans, $sort]);
+        $new_id = $db->lastInsertId();
+        
+        aldhran_log("FAQ_CREATE", "Created new FAQ entry #$new_id", $_SESSION['user_id']);
         $message = "New FAQ created successfully.";
     }
 }
 
 // Löschen
 if (isset($_GET['del'])) {
+    // Optional: Hier könnte man auch einen CSRF-Check via Link-Token einbauen
     $del_id = (int)$_GET['del'];
-    $conn->query("DELETE FROM faq WHERE id = $del_id");
+    $stmt = $db->prepare("DELETE FROM faq WHERE id = ?");
+    $stmt->execute([$del_id]);
+    
+    aldhran_log("FAQ_DELETE", "Deleted FAQ entry #$del_id", $_SESSION['user_id']);
     $message = "Entry deleted.";
 }
 
@@ -42,14 +59,17 @@ if (isset($_GET['del'])) {
 $edit_data = ['id' => 0, 'category' => '', 'question' => '', 'answer' => '', 'sort_order' => 0];
 if (isset($_GET['edit'])) {
     $edit_id = (int)$_GET['edit'];
-    $res = $conn->query("SELECT * FROM faq WHERE id = $edit_id");
-    if ($res && $res->num_rows > 0) {
-        $edit_data = $res->fetch_assoc();
+    $stmt = $db->prepare("SELECT * FROM faq WHERE id = ?");
+    $stmt->execute([$edit_id]);
+    $res = $stmt->fetch();
+    if ($res) {
+        $edit_data = $res;
     }
 }
 
-// Alle FAQs für die Liste laden
-$all_faqs = $conn->query("SELECT * FROM faq ORDER BY category, sort_order ASC");
+// Alle FAQs via PDO laden
+$stmt_all = $db->query("SELECT * FROM faq ORDER BY category, sort_order ASC");
+$all_faqs = $stmt_all->fetchAll();
 ?>
 
 <div class="admin-container">
@@ -59,7 +79,7 @@ $all_faqs = $conn->query("SELECT * FROM faq ORDER BY category, sort_order ASC");
     
     <?php if ($message): ?>
         <div style="background: rgba(46, 204, 113, 0.1); border: 1px solid #2ecc71; padding: 15px; margin-bottom: 25px; color: #2ecc71; font-size: 0.9em; border-radius: 4px;">
-            <i class="fas fa-check-circle"></i> <?php echo $message; ?>
+            <i class="fas fa-check-circle"></i> <?php echo h($message); ?>
         </div>
     <?php endif; ?>
 
@@ -69,31 +89,32 @@ $all_faqs = $conn->query("SELECT * FROM faq ORDER BY category, sort_order ASC");
         </h3>
         
         <form method="POST" action="index.php?p=faq_admin">
+            <input type="hidden" name="csrf_token" value="<?php echo generateToken(); ?>">
             <input type="hidden" name="id" value="<?php echo $edit_data['id']; ?>">
             
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 15px;">
                 <div>
                     <label style="display:block; font-size: 0.7em; color: #555; text-transform: uppercase; margin-bottom: 5px;">Category</label>
-                    <input type="text" name="category" value="<?php echo htmlspecialchars($edit_data['category']); ?>" required 
+                    <input type="text" name="category" value="<?php echo h($edit_data['category']); ?>" required 
                            style="width:100%; background:#050505; border:1px solid #222; color:#ccc; padding:10px;">
                 </div>
                 <div>
                     <label style="display:block; font-size: 0.7em; color: #555; text-transform: uppercase; margin-bottom: 5px;">Sort Order</label>
-                    <input type="number" name="sort_order" value="<?php echo $edit_data['sort_order']; ?>" 
+                    <input type="number" name="sort_order" value="<?php echo (int)$edit_data['sort_order']; ?>" 
                            style="width:100%; background:#050505; border:1px solid #222; color:#ccc; padding:10px;">
                 </div>
             </div>
 
             <div style="margin-bottom: 15px;">
                 <label style="display:block; font-size: 0.7em; color: #555; text-transform: uppercase; margin-bottom: 5px;">Question</label>
-                <input type="text" name="question" value="<?php echo htmlspecialchars($edit_data['question']); ?>" required 
+                <input type="text" name="question" value="<?php echo h($edit_data['question']); ?>" required 
                        style="width:100%; background:#050505; border:1px solid #222; color:#ccc; padding:10px;">
             </div>
 
             <div style="margin-bottom: 20px;">
                 <label style="display:block; font-size: 0.7em; color: #555; text-transform: uppercase; margin-bottom: 5px;">Answer</label>
                 <textarea name="answer" rows="6" required 
-                          style="width:100%; background:#050505; border:1px solid #222; color:#ccc; padding:10px; resize:vertical; font-family: sans-serif;"><?php echo htmlspecialchars($edit_data['answer']); ?></textarea>
+                          style="width:100%; background:#050505; border:1px solid #222; color:#ccc; padding:10px; resize:vertical; font-family: sans-serif;"><?php echo h($edit_data['answer']); ?></textarea>
             </div>
 
             <div style="display: flex; align-items: center; gap: 15px;">
@@ -118,10 +139,10 @@ $all_faqs = $conn->query("SELECT * FROM faq ORDER BY category, sort_order ASC");
                 </tr>
             </thead>
             <tbody>
-                <?php if($all_faqs): while ($row = $all_faqs->fetch_assoc()): ?>
+                <?php if($all_faqs): foreach ($all_faqs as $row): ?>
                 <tr style="border-bottom:1px solid #0a0a0a; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
-                    <td style="padding:15px 10px; color:#555; font-size:0.8em;"><?php echo htmlspecialchars($row['category']); ?></td>
-                    <td style="color:#eee; font-size:0.9em;"><?php echo htmlspecialchars($row['question']); ?></td>
+                    <td style="padding:15px 10px; color:#555; font-size:0.8em;"><?php echo h($row['category']); ?></td>
+                    <td style="color:#eee; font-size:0.9em;"><?php echo h($row['question']); ?></td>
                     <td style="text-align:right; padding-right:10px;">
                         <a href="?p=faq_admin&edit=<?php echo $row['id']; ?>" style="color:var(--gold); text-decoration:none; margin-right:15px;" title="Edit">
                             <i class="fas fa-edit"></i>
@@ -131,7 +152,9 @@ $all_faqs = $conn->query("SELECT * FROM faq ORDER BY category, sort_order ASC");
                         </a>
                     </td>
                 </tr>
-                <?php endwhile; endif; ?>
+                <?php endforeach; else: ?>
+                    <tr><td colspan="3" style="text-align:center; padding:20px; color:#444;">No entries found.</td></tr>
+                <?php endif; ?>
             </tbody>
         </table>
     </div>

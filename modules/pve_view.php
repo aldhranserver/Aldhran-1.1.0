@@ -1,13 +1,15 @@
 <?php
 /**
- * PVE MAIN DASHBOARD - Aldhran V1.0 - Standalone
+ * PVE MAIN DASHBOARD - Aldhran Enterprise
+ * Version: 2.0.0 - SECURITY: PDO Migration & Live Analytics
  */
 require_once('includes/db.php');
 
-// Nutze $conn statt $db und hole Statistiken aus der DOL-Datenbank
-$stats_mobs   = $conn->query("SELECT COUNT(*) FROM mob")->fetch_row()[0] ?? 0;
-$stats_items  = $conn->query("SELECT COUNT(*) FROM itemtemplate")->fetch_row()[0] ?? 0;
-$stats_quests = $conn->query("SELECT COUNT(*) FROM quest")->fetch_row()[0] ?? 0;
+// Nutze das globale PDO Objekt $db
+// fetchColumn(0) holt direkt das Ergebnis von COUNT(*) ohne Umwege
+$stats_mobs    = $db->query("SELECT COUNT(*) FROM mob")->fetchColumn() ?: 0;
+$stats_items   = $db->query("SELECT COUNT(*) FROM itemtemplate")->fetchColumn() ?: 0;
+$stats_quests  = $db->query("SELECT COUNT(*) FROM quest")->fetchColumn() ?: 0;
 ?>
 
 <style>
@@ -73,7 +75,7 @@ $stats_quests = $conn->query("SELECT COUNT(*) FROM quest")->fetch_row()[0] ?? 0;
             <i class="fas fa-dragon"></i>
             <h3>Bestiary</h3>
             <p>Consult the chronicles of manifested entities. Find strengths, weaknesses, and regional spawns.</p>
-            <div class="stat-overlay"><?php echo number_format($stats_mobs); ?> ENTITIES</div>
+            <div class="stat-overlay"><?php echo number_format((int)$stats_mobs); ?> ENTITIES</div>
         </a>
 
         <a href="?p=pve_dungeons" class="pve-tile">
@@ -87,7 +89,7 @@ $stats_quests = $conn->query("SELECT COUNT(*) FROM quest")->fetch_row()[0] ?? 0;
             <i class="fas fa-scroll"></i>
             <h3>Quests</h3>
             <p>The archives of heroic deeds. Review objectives, kill-targets, and legendary rewards.</p>
-            <div class="stat-overlay"><?php echo number_format($stats_quests); ?> CHRONICLES</div>
+            <div class="stat-overlay"><?php echo number_format((int)$stats_quests); ?> CHRONICLES</div>
         </a>
 
         <a href="?p=pve_alchemy" class="pve-tile" style="grid-column: span 1;">

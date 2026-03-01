@@ -1,49 +1,44 @@
 <?php
 /**
- * VERIFY LOGIC & VIEW - Aldhran Freeshard
- * Version: 1.1.0 - SECURITY: Fully Prepared Statements
+ * VERIFY LOGIC & VIEW - Aldhran Enterprise
+ * Version: 2.0.0 - SECURITY: PDO Migration & Enterprise Logging
  */
 
 // 1. LOGIK-TEIL
 $verify_success = false;
-$verify_error = false;
+$verify_error = "";
 
 if (isset($_GET['code'])) {
-    $code = $_GET['code']; // Kein real_escape mehr nötig wegen Prepared Stmts
+    $code = $_GET['code'];
     
-    // Suche nach dem User mit diesem Code (Sicher via Prepared Statement)
-    $stmt_find = $conn->prepare("SELECT id, username FROM users WHERE verify_code = ? AND is_verified = 0");
-    $stmt_find->bind_param("s", $code);
-    $stmt_find->execute();
-    $res = $stmt_find->get_result();
+    // Suche nach dem User (PDO Syntax)
+    $stmt_find = $db->prepare("SELECT id, username FROM users WHERE verify_code = ? AND is_verified = 0");
+    $stmt_find->execute([$code]);
+    $u = $stmt_find->fetch();
     
-    if ($res && $res->num_rows > 0) {
-        $u = $res->fetch_assoc();
+    if ($u) {
         $uid = (int)$u['id'];
         $uname = $u['username'];
         
-        $conn->begin_transaction();
-
         try {
-            // A. CMS & Spike Status auf verifiziert setzen (Sicher via Prepared)
-            $stmt_upd_cms = $conn->prepare("UPDATE users SET is_verified = 1, verify_code = NULL WHERE id = ?");
-            $stmt_upd_cms->bind_param("i", $uid);
-            $stmt_upd_cms->execute();
+            $db->beginTransaction();
+
+            // A. CMS Status auf verifiziert setzen
+            $stmt_upd_cms = $db->prepare("UPDATE users SET is_verified = 1, verify_code = NULL WHERE id = ?");
+            $stmt_upd_cms->execute([$uid]);
             
             // B. DOL Spiel-Account aktivieren (Status 1 = Aktiv)
-            $stmt_upd_dol = $conn->prepare("UPDATE account SET Status = 1 WHERE Name = ?");
-            $stmt_upd_dol->bind_param("s", $uname);
-            $stmt_upd_dol->execute();
+            $stmt_upd_dol = $db->prepare("UPDATE account SET Status = 1 WHERE Name = ?");
+            $stmt_upd_dol->execute([$uname]);
 
-            // C. Log-Eintrag (Sicher via Prepared in db.php definiert)
-            if (function_exists('logAction')) {
-                logAction($conn, $uid, $uid, 'USER_VERIFIED', "User '$uname' verified via email.");
-            }
+            // C. Enterprise Log-Eintrag (Nutzt die neue aldhran_log Funktion aus db.php)
+            aldhran_log('USER_VERIFIED', "User '$uname' verified via email code.", $uid, $uid);
             
-            $conn->commit();
+            $db->commit();
             $verify_success = true;
         } catch (Exception $e) {
-            $conn->rollback();
+            $db->rollBack();
+            error_log("Verification Error: " . $e->getMessage());
             $verify_error = "The ritual of verification failed. Please contact the administrators.";
         }
     } else {

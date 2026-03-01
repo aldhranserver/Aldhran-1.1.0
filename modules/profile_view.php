@@ -1,12 +1,18 @@
 <?php 
 /**
- * PROFILE VIEW - Aldhran Freeshard
- * Version: 0.8.3 - CLEANED: phpBB references removed
+ * PROFILE VIEW - Aldhran Enterprise
+ * Version: 2.0.0 - SECURITY: PDO Migration & XSS Protection
  */
 if (!isset($_SESSION['user_id'])) return; 
 
 $uid = (int)$_SESSION['user_id'];
-$me_view = $conn->query("SELECT * FROM users WHERE id = $uid")->fetch_assoc();
+
+// --- FETCH USER DATA via PDO ---
+$stmt_me = $db->prepare("SELECT * FROM users WHERE id = ?");
+$stmt_me->execute([$uid]);
+$me_view = $stmt_me->fetch();
+
+if (!$me_view) return;
 
 $standing_map = [
     0 => ['label' => 'You are all good!', 'color' => '#00ff00'],
@@ -20,7 +26,6 @@ $standing_map = [
 $s_val = (int)$me_view['standing'];
 $cur_std = $standing_map[$s_val] ?? $standing_map[0];
 $is_restricted = ($s_val >= 3); 
-$standing_reason = $me_view['standing_reason'] ?? '';
 ?>
 
 <div class="admin-container">
@@ -36,12 +41,14 @@ $standing_reason = $me_view['standing_reason'] ?? '';
 
     <div class="admin-box" style="padding: 30px;">
         <form action="index.php?p=profile" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="<?php echo generateToken(); ?>">
+            
             <div style="display: grid; grid-template-columns: 150px 1fr; gap: 30px;">
                 
                 <div style="text-align: center;">
                     <div style="margin-bottom: 15px; position: relative; display: inline-block;">
                         <?php if(!empty($me_view['avatar_url'])): ?>
-                            <img src="<?php echo $me_view['avatar_url']; ?>" style="width: 120px; height: 120px; border: 1px solid var(--gold); object-fit: cover; <?php echo ($is_restricted) ? 'filter: grayscale(100%) opacity(0.6);' : ''; ?>">
+                            <img src="<?php echo h($me_view['avatar_url']); ?>" style="width: 120px; height: 120px; border: 1px solid var(--gold); object-fit: cover; <?php echo ($is_restricted) ? 'filter: grayscale(100%) opacity(0.6);' : ''; ?>">
                             <?php if (!$is_restricted): ?>
                                 <a href="?p=profile&delete_my_avatar=1" style="position: absolute; top: -10px; right: -10px; background: #000; color: #ff4444; border: 1px solid #ff4444; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; text-decoration: none;">
                                      <i class="fas fa-trash-alt" style="font-size: 12px;"></i>
@@ -62,16 +69,16 @@ $standing_reason = $me_view['standing_reason'] ?? '';
                 <div>
                     <div style="margin-bottom: 20px;">
                         <label class="um-label">Languages</label>
-                        <input type="text" name="u_langs" value="<?php echo htmlspecialchars($me_view['languages'] ?? ''); ?>" <?php echo ($is_restricted) ? 'readonly' : ''; ?> style="width: 100%;" class="um-input">
+                        <input type="text" name="u_langs" value="<?php echo h($me_view['languages'] ?? ''); ?>" <?php echo ($is_restricted) ? 'readonly' : ''; ?> style="width: 100%;" class="um-input">
                     </div>
                     <div style="margin-bottom: 20px;">
                         <label class="um-label">Biography</label>
-                        <textarea name="u_desc" <?php echo ($is_restricted) ? 'readonly' : ''; ?> style="width: 100%; height: 80px; resize: none;" class="um-input"><?php echo htmlspecialchars($me_view['description'] ?? ''); ?></textarea>
+                        <textarea name="u_desc" <?php echo ($is_restricted) ? 'readonly' : ''; ?> style="width: 100%; height: 80px; resize: none;" class="um-input"><?php echo h($me_view['description'] ?? ''); ?></textarea>
                     </div>
 
                     <div style="margin-bottom: 20px; border-left: 2px solid var(--glow-blue); padding-left: 15px;">
                         <label class="um-label" style="color: var(--glow-blue);">Forum Signature</label>
-                        <textarea name="u_sig" <?php echo ($is_restricted) ? 'readonly' : ''; ?> style="width: 100%; height: 60px; resize: none; background: rgba(0,212,255,0.02);" class="um-input"><?php echo htmlspecialchars($me_view['forum_signature'] ?? ''); ?></textarea>
+                        <textarea name="u_sig" <?php echo ($is_restricted) ? 'readonly' : ''; ?> style="width: 100%; height: 60px; resize: none; background: rgba(0,212,255,0.02);" class="um-input"><?php echo h($me_view['forum_signature'] ?? ''); ?></textarea>
                     </div>
 
                     <div style="margin-bottom: 25px; border-top: 1px solid #111; padding-top: 20px;">

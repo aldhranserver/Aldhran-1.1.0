@@ -9,6 +9,8 @@
 
     <div class="admin-box" style="border:1px solid rgba(212, 175, 55, 0.1); background: rgba(5,5,5,0.98); padding: 40px; border-top: 3px solid #d4af37;">
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="<?php echo generateToken(); ?>">
+
             <div style="margin-bottom: 25px;">
                 <label style="color: #444; font-size: 0.7em; letter-spacing: 2px; text-transform: uppercase;">Topic Title</label>
                 <input type="text" name="thread_title" class="um-input-search-glow" style="width:100%; margin-top:10px; padding: 12px; background: #000; color: #fff; border: 1px solid #1a1a1a; font-size: 0.9em;" required autofocus placeholder="Title...">

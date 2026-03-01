@@ -23,25 +23,29 @@
                 <input type="text" name="q" 
                        class="sidebar-search-input" 
                        placeholder="Find a player..." 
-                       value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>">
+                       value="<?php echo h($_GET['q'] ?? ''); ?>">
                 <button type="submit" class="sidebar-search-btn">
                     <i class="fas fa-chevron-right"></i>
                 </button>
             </form>
 
             <?php 
-            // Vorschau-Box: Erscheint nur, wenn eine Suche aktiv ist, aber wir nicht auf der Haupt-Suchseite sind
-            if (isset($_GET['q']) && !empty(trim($_GET['q'])) && ($_GET['p'] ?? '') !== 'search'): ?>
+            // Vorschau-Box: Nutzt jetzt $db (PDO)
+            $searchTerm = trim($_GET['q'] ?? '');
+            if (!empty($searchTerm) && ($_GET['p'] ?? '') !== 'search'): ?>
                 <div class="search-results-box">
                     <?php
-                    $s = mysqli_real_escape_string($conn, trim($_GET['q']));
-                    $res = $conn->query("SELECT id, username FROM users WHERE username LIKE '%$s%' LIMIT 5");
-                    if ($res && $res->num_rows > 0):
-                        while($row = $res->fetch_assoc()): ?>
-                            <a href="?p=user&id=<?php echo $row['id']; ?>" class="search-result-link">
-                                <i class="fas fa-user search-icon-dim"></i> <?php echo htmlspecialchars($row['username']); ?>
+                    // Suche via PDO Prepared Statement
+                    $stmtSearch = $db->prepare("SELECT id, username FROM users WHERE username LIKE ? LIMIT 5");
+                    $stmtSearch->execute(['%' . $searchTerm . '%']);
+                    $searchResults = $stmtSearch->fetchAll();
+
+                    if ($searchResults):
+                        foreach($searchResults as $row): ?>
+                            <a href="?p=user&id=<?php echo (int)$row['id']; ?>" class="search-result-link">
+                                <i class="fas fa-user search-icon-dim"></i> <?php echo h($row['username']); ?>
                             </a>
-                        <?php endwhile;
+                        <?php endforeach;
                     else: ?>
                         <span class="search-no-result">No user found.</span>
                     <?php endif; ?>
@@ -75,18 +79,16 @@
         $canAdmin = false;
         $checkPriv = (int)($_SESSION['priv_level'] ?? 0);
 
-        // --- ADMIN TOOL LOGIK ---
+        // --- ADMIN TOOL LOGIK (PDO) ---
         if ($checkPriv >= 4) {
             $canAdmin = true;
         } elseif ($checkPriv === 3 || $checkPriv === 2) {
-            $stmtPerm = $conn->prepare("SELECT can_manage_users FROM staff_permissions WHERE priv_level = ?");
-            $stmtPerm->bind_param("i", $checkPriv);
-            $stmtPerm->execute();
-            $resPerm = $stmtPerm->get_result();
-            if ($resPerm && $rowP = $resPerm->fetch_assoc()) {
-                if ((int)$rowP['can_manage_users'] === 1) {
-                    $canAdmin = true;
-                }
+            $stmtPerm = $db->prepare("SELECT can_manage_users FROM staff_permissions WHERE priv_level = ?");
+            $stmtPerm->execute([$checkPriv]);
+            $rowP = $stmtPerm->fetch();
+            
+            if ($rowP && (int)$rowP['can_manage_users'] === 1) {
+                $canAdmin = true;
             }
         }
 

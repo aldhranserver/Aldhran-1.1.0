@@ -1,39 +1,36 @@
 <?php
 /**
- * PVE QUEST DETAIL VIEW - Aldhran V1.0 - Standalone
+ * PVE QUEST DETAIL VIEW - Aldhran Enterprise
+ * Version: 2.0.0 - SECURITY: PDO Migration & Dynamic Schema Handling
  */
 require_once('includes/db.php');
 
-// Korrektur: $conn statt $db verwenden
-$quest_id = isset($_GET['id']) ? mysqli_real_escape_string($conn, $_GET['id']) : '';
+// Quest ID sicher erfassen
+$quest_id = $_GET['id'] ?? '';
 
 if (empty($quest_id)) {
     echo "<div class='admin-container'><p>No Quest ID provided.</p></div>"; 
     return;
 }
 
-// 1. Spalten-Mapping über $conn
-$cols_res = $conn->query("SHOW COLUMNS FROM `quest`") or die($conn->error);
-$columns = [];
-if ($cols_res) {
-    while($col = $cols_res->fetch_assoc()) { 
-        $columns[] = $col['Field']; 
-    }
-}
+// 1. Spalten-Mapping via PDO (Struktur-Check)
+$stmt_cols = $db->query("SHOW COLUMNS FROM `quest`") or die("Archive Error.");
+$columns = $stmt_cols->fetchAll(PDO::FETCH_COLUMN);
 
+// Ermittlung der korrekten ID-Spalte (Quest_ID, ID oder id)
 $id_col = in_array('Quest_ID', $columns) ? 'Quest_ID' : (in_array('ID', $columns) ? 'ID' : 'id');
 
-// Abfrage über $conn
-$quest_res = $conn->query("SELECT * FROM quest WHERE `$id_col` = '$quest_id' LIMIT 1");
+// 2. Abfrage über das globale $db Objekt
+$stmt_quest = $db->prepare("SELECT * FROM quest WHERE `$id_col` = ? LIMIT 1");
+$stmt_quest->execute([$quest_id]);
+$q = $stmt_quest->fetch();
 
-if (!$quest_res || $quest_res->num_rows == 0) {
+if (!$q) {
     echo "<div class='admin-container'><p>This chronicle has been lost to time.</p></div>"; 
     return;
 }
 
-$q = $quest_res->fetch_assoc();
-
-// 2. Bereinigung technischer Namen (Namespace Filter)
+// 3. Bereinigung technischer Namen (Namespace Filter)
 $rawName = $q['Name'] ?? 'Unknown';
 if (strpos($rawName, '.') !== false) {
     $parts = explode('.', $rawName);
@@ -42,7 +39,7 @@ if (strpos($rawName, '.') !== false) {
     $cleanName = $rawName;
 }
 
-// 3. Dynamische Fallbacks für Inhalte
+// 4. Dynamische Fallbacks für Inhalte
 $desc_text = $q['Description'] ?? $q['Summary'] ?? 'The archives are silent on the details of this task.';
 $reward_xp = $q['Experience'] ?? $q['XP'] ?? $q['RewardExperience'] ?? 0;
 $reward_money = $q['Money'] ?? $q['Gold'] ?? $q['RewardMoney'] ?? 0;
@@ -62,17 +59,17 @@ $min_lvl = $q['MinLevel'] ?? $q['LevelMin'] ?? $q['Level'] ?? '??';
 <div class="admin-container">
     <div class="quest-detail-header">
         <a href="?p=pve_quests" style="color: #444; text-decoration: none; font-size: 10px; text-transform: uppercase;">&larr; Back to Chronicles</a>
-        <h2 style="font-family:'Cinzel'; color:#eee; margin: 15px 0 5px 0; letter-spacing: 2px;"><?php echo htmlspecialchars($cleanName); ?></h2>
+        <h2 style="font-family:'Cinzel'; color:#eee; margin: 15px 0 5px 0; letter-spacing: 2px;"><?php echo h($cleanName); ?></h2>
         <div class="quest-meta">
-            <span>Level: <strong><?php echo htmlspecialchars($min_lvl); ?></strong></span>
-            <span>Region: <strong><?php echo htmlspecialchars($q['StartRegion'] ?? 'The Wilds'); ?></strong></span>
-            <span>Archive ID: <strong><?php echo htmlspecialchars($quest_id); ?></strong></span>
+            <span>Level: <strong><?php echo h($min_lvl); ?></strong></span>
+            <span>Region: <strong><?php echo h($q['StartRegion'] ?? 'The Wilds'); ?></strong></span>
+            <span>Archive ID: <strong><?php echo h($quest_id); ?></strong></span>
         </div>
     </div>
 
     <div class="quest-section">
         <h4>The Objective</h4>
-        <p style="color: #888; line-height: 1.8; font-size: 13px; white-space: pre-line;"><?php echo htmlspecialchars($desc_text); ?></p>
+        <p style="color: #888; line-height: 1.8; font-size: 13px; white-space: pre-line;"><?php echo h($desc_text); ?></p>
     </div>
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
@@ -90,7 +87,7 @@ $min_lvl = $q['MinLevel'] ?? $q['LevelMin'] ?? $q['Level'] ?? '??';
         <div class="quest-section">
             <h4>Instructions</h4>
             <p style="font-size: 11px; color: #555; font-style: italic;">
-                Seek out <?php echo htmlspecialchars($q['StartNPCName'] ?? 'the Questgiver'); ?> to begin this journey.
+                Seek out <?php echo h($q['StartNPCName'] ?? 'the Questgiver'); ?> to begin this journey.
             </p>
         </div>
     </div>

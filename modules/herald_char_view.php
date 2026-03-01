@@ -1,7 +1,7 @@
 <?php
 /**
- * CHARACTER HERALD DETAILS
- * Version: 1.0.0 - Standalone (No Forum, K/D & Class Mapping Fix)
+ * CHARACTER HERALD DETAILS - Aldhran Enterprise
+ * Version: 2.0.0 - SECURITY: PDO Migration & Class Mapping
  */
 
 // --- DOL CLASS ID MAPPING ---
@@ -25,26 +25,25 @@ if (!function_exists('getClassName')) {
     }
 }
 
-// Nutze $conn statt $db
-$char_name = isset($_GET['name']) ? mysqli_real_escape_string($conn, $_GET['name']) : '';
+// Wir nutzen jetzt das globale PDO Objekt $db
+$char_name = isset($_GET['name']) ? trim($_GET['name']) : '';
 
 if (empty($char_name)) {
     echo "<div class='admin-box'>No character specified.</div>";
     return;
 }
 
-// Abfrage mit Summe der Realm-Kills über $conn
-$query = "SELECT *, 
+// Abfrage mit Summe der Realm-Kills via PDO Prepared Statement
+$stmt = $db->prepare("SELECT *, 
           (KillsAlbionPlayers + KillsMidgardPlayers + KillsHiberniaPlayers) AS TotalKills 
-          FROM dolcharacters WHERE Name = '$char_name'";
-$res = $conn->query($query);
+          FROM dolcharacters WHERE Name = ?");
+$stmt->execute([$char_name]);
+$c = $stmt->fetch();
 
-if (!$res || $res->num_rows === 0) {
+if (!$c) {
     echo "<div class='admin-box'>Character not found in the chronicles.</div>";
     return;
 }
-
-$c = $res->fetch_assoc();
 
 $r_info = [
     1 => ['name' => 'Albion', 'color' => '#4a90e2'],
@@ -64,9 +63,9 @@ $r_color = $r_info[(int)$c['Realm']]['color'] ?? '#555';
     <div class="admin-box" style="border-top: 3px solid <?php echo $r_color; ?>; padding: 40px; background: rgba(0,0,0,0.3);">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; border-bottom: 1px solid #111; padding-bottom: 20px;">
             <div>
-                <h1 style="margin: 0; font-family: 'Cinzel'; font-size: 2.5em; color: #eee;"><?php echo htmlspecialchars($c['Name']); ?></h1>
+                <h1 style="margin: 0; font-family: 'Cinzel'; font-size: 2.5em; color: #eee;"><?php echo h($c['Name']); ?></h1>
                 <div style="color: <?php echo $r_color; ?>; font-weight: bold; font-size: 1em; text-transform: uppercase; letter-spacing: 2px; margin-top: 5px;">
-                    Level <?php echo $c['Level']; ?> <?php echo getClassName((int)$c['Class']); ?> 
+                    Level <?php echo (int)$c['Level']; ?> <?php echo getClassName((int)$c['Class']); ?> 
                     <span style="color: #222; margin: 0 10px;">|</span> <?php echo $r_info[(int)$c['Realm']]['name']; ?>
                 </div>
             </div>
@@ -74,7 +73,7 @@ $r_color = $r_info[(int)$c['Realm']]['color'] ?? '#555';
             <div style="text-align: right;">
                 <div style="font-size: 0.7em; color: #555; text-transform: uppercase; letter-spacing: 1px;">Realm Rank</div>
                 <div style="font-size: 2.5em; color: var(--gold); font-family: 'Cinzel'; line-height: 1;">
-                    <?php echo $c['Rank'] ?? '1L0'; ?>
+                    <?php echo h($c['Rank'] ?? '1L0'); ?>
                 </div>
             </div>
         </div>

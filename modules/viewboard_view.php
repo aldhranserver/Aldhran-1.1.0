@@ -1,10 +1,4 @@
-<?php 
-/**
- * VIEWBOARD VIEW - Spike Forum
- * Version: 0.9.2 - DESIGN SYNC: Buttons match Live/AM Style
- */
-if (!defined('IN_CMS')) { exit; } 
-?>
+<?php if (!defined('IN_CMS')) { exit; } ?>
 
 <div class="um-nexus-wrapper">
     <div style="margin-bottom: 20px;">
@@ -18,7 +12,7 @@ if (!defined('IN_CMS')) { exit; }
     <div class="um-internal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px; gap: 20px;">
         <div style="flex: 1;">
             <h2 class="um-internal-title" style="margin: 0; font-family: 'Cinzel', serif; letter-spacing: 2px; color: #fff; text-transform: uppercase;">
-                <?php echo htmlspecialchars($board_info['title'] ?? 'Unknown Board'); ?>
+                <?php echo h($board_info['title'] ?? 'Unknown Board'); ?>
             </h2>
         </div>
         
@@ -29,7 +23,7 @@ if (!defined('IN_CMS')) { exit; }
 
         if ($myId > 0 && $myStanding < 3 && $myPriv >= $required_bs): ?>
             <div>
-                <a href="?p=newthread&bid=<?php echo $board_id; ?>" 
+                <a href="?p=newthread&bid=<?php echo (int)$board_id; ?>" 
                    style="text-decoration: none; background: rgba(212, 175, 55, 0.1); color: #d4af37; border: 1px solid #d4af37; padding: 6px 14px; font-size: 0.7em; font-weight: bold; letter-spacing: 1px; display: inline-flex; align-items: center; gap: 8px; transition: 0.3s; text-transform: uppercase;"
                    onmouseover="this.style.background='#d4af37'; this.style.color='#000';"
                    onmouseout="this.style.background='rgba(212, 175, 55, 0.1)'; this.style.color='#d4af37';">
@@ -40,6 +34,8 @@ if (!defined('IN_CMS')) { exit; }
     </div>
 
     <form method="POST">
+    <input type="hidden" name="csrf_token" value="<?php echo generateToken(); ?>">
+
     <div class="admin-box" style="background:rgba(10,10,10,0.9); padding:0; border-left:3px solid var(--glow-blue); overflow: hidden;">
         <table style="width:100%; border-collapse: collapse;">
             <thead style="background: #080808; color: #555; font-size: 0.7em; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #1a1a1a;">
@@ -55,29 +51,31 @@ if (!defined('IN_CMS')) { exit; }
                 </tr>
             </thead>
             <tbody>
-                <?php if (isset($threads_res) && $threads_res->num_rows > 0): 
-                    while($t = $threads_res->fetch_assoc()): ?>
+                <?php 
+                // FIX: Nutzt jetzt das Array aus der PDO-Logik
+                if (!empty($threads)): 
+                    foreach($threads as $t): ?>
                 <tr style="border-bottom:1px solid #151515; transition: 0.3s;" 
                     onmouseover="this.style.background='rgba(0, 212, 255, 0.04)'" 
                     onmouseout="this.style.background='transparent'">
                     
                     <?php if($myPriv >= 4): ?>
                     <td style="padding-left:20px;">
-                        <input type="checkbox" name="selected_threads[]" value="<?php echo $t['id']; ?>" class="thread-checkbox" style="cursor:pointer;">
+                        <input type="checkbox" name="selected_threads[]" value="<?php echo (int)$t['id']; ?>" class="thread-checkbox" style="cursor:pointer;">
                     </td>
                     <?php endif; ?>
 
-                    <td style="padding:20px; cursor:pointer;" onclick="window.location.href='?p=viewthread&id=<?php echo $t['id']; ?>'">
+                    <td style="padding:20px; cursor:pointer;" onclick="window.location.href='?p=viewthread&id=<?php echo (int)$t['id']; ?>'">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <?php if($t['is_sticky']): ?><i class="fas fa-thumbtack" style="color:var(--glow-gold); font-size: 0.85em;"></i><?php endif; ?>
                             <?php if($t['is_locked']): ?><i class="fas fa-lock" style="color:#444; font-size: 0.85em;"></i><?php endif; ?>
-                            <span style="color:#f0f0f0; font-weight:bold; font-size: 0.95em;"><?php echo htmlspecialchars($t['title']); ?></span>
+                            <span style="color:#f0f0f0; font-weight:bold; font-size: 0.95em;"><?php echo h($t['title']); ?></span>
                         </div>
                     </td>
                     
                     <td style="padding:12px 0;">
-                        <span style="color:var(--glow-blue); font-size:0.85em;"><?php echo htmlspecialchars($t['username'] ?? 'Ghost'); ?></span>
-                        <br><small style="color:#333; font-size:0.65em; text-transform: uppercase;"><?php echo htmlspecialchars($t['user_title'] ?? 'Player'); ?></small>
+                        <span style="color:var(--glow-blue); font-size:0.85em;"><?php echo h($t['username'] ?? 'Ghost'); ?></span>
+                        <br><small style="color:#333; font-size:0.65em; text-transform: uppercase;"><?php echo h($t['user_title'] ?? 'Player'); ?></small>
                     </td>
                     
                     <td style="text-align:right; padding-right:25px; color:#555; font-size:0.8em;">
@@ -85,7 +83,7 @@ if (!defined('IN_CMS')) { exit; }
                         <br><span style="font-size: 0.85em; opacity: 0.6;"><?php echo date("H:i", strtotime($t['created_at'])); ?></span>
                     </td>
                 </tr>
-                <?php endwhile; else: ?>
+                <?php endforeach; else: ?>
                 <tr>
                     <td colspan="<?php echo ($myPriv >= 4) ? '4' : '3'; ?>" style="padding:70px 20px; text-align:center; color:#222;">
                         <span style="font-style: italic; font-size: 1.1em;">There are no posts yet.</span>
@@ -95,7 +93,7 @@ if (!defined('IN_CMS')) { exit; }
             </tbody>
         </table>
 
-        <?php if($myPriv >= 4 && $threads_res->num_rows > 0): ?>
+        <?php if($myPriv >= 4 && !empty($threads)): ?>
         <div style="background: #050505; padding: 15px 20px; display: flex; align-items: center; flex-wrap: wrap; gap: 15px; border-top: 1px solid #111;">
             <div style="display: flex; align-items: center; gap: 10px;">
                 <i class="fas fa-shield-alt" style="color:var(--glow-blue); font-size: 0.9em;"></i>
@@ -112,10 +110,10 @@ if (!defined('IN_CMS')) { exit; }
             <select name="target_board" class="um-input" style="width:180px; padding:5px; font-size:0.8em; background:#111; border:1px solid #333; color:#ccc;">
                 <option value="0">-- Target Board --</option>
                 <?php 
-                $all_boards_res->data_seek(0); 
-                while($ab = $all_boards_res->fetch_assoc()): ?>
-                    <option value="<?php echo $ab['id']; ?>"><?php echo htmlspecialchars($ab['title']); ?></option>
-                <?php endwhile; ?>
+                // FIX: PDO Arrays nutzt man mit foreach
+                foreach($all_boards as $ab): ?>
+                    <option value="<?php echo (int)$ab['id']; ?>"><?php echo h($ab['title']); ?></option>
+                <?php endforeach; ?>
             </select>
 
             <button type="submit" name="execute_mod_action" class="btn-nexus-edit" style="padding: 5px 15px; font-size:0.7em; border-color: var(--glow-blue); color: var(--glow-blue);" onclick="return confirm('Execute selected moderation actions on all checked topics?')">

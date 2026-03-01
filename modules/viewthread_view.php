@@ -1,7 +1,7 @@
 <?php 
 /**
- * VIEWTHREAD VIEW - Spike Forum
- * Version: 1.8.0 - ADDED: Separate Thread & Post Deletion
+ * VIEWTHREAD VIEW - Aldhran Enterprise
+ * Version: 2.0.0 - SECURITY: PDO Migration & CSRF Protection
  */
 if (!defined('IN_CMS')) { exit; } 
 
@@ -27,7 +27,7 @@ function renderRankStars($bs) {
     return ($count === 0 && $bs < 4) ? '' : $output;
 }
 
-// --- Effektive Post-Berechtigung berechnen ---
+// --- Effektive Post-Berechtigung ---
 $effective_min_post = ($thread['board_min_post'] > 0) ? (int)$thread['board_min_post'] : (int)$thread['cat_min_post'];
 $can_actually_post = ($myId > 0 && $myStanding < 3 && $myPriv >= $effective_min_post);
 ?>
@@ -48,15 +48,16 @@ $can_actually_post = ($myId > 0 && $myStanding < 3 && $myPriv >= $effective_min_
         <div>
             <h2 class="um-internal-title">
                 <?php if($thread['is_sticky']): ?><i class="fas fa-thumbtack" style="color:var(--glow-gold); font-size:0.7em;"></i><?php endif; ?>
-                <?php echo htmlspecialchars($thread['title']); ?>
+                <?php echo h($thread['title']); ?>
                 <?php if($thread['is_locked']): ?><i class="fas fa-lock" style="color:#666; font-size:0.7em;"></i><?php endif; ?>
             </h2>
-            <small style="color:#444;">BOARD: <?php echo htmlspecialchars($thread['board_title']); ?></small>
+            <small style="color:#444;">BOARD: <?php echo h($thread['board_title']); ?></small>
         </div>
         
         <div style="display: flex; gap: 10px; align-items: center;">
             <?php if ($myPriv >= 3): ?>
                 <form method="POST" action="index.php?p=viewthread&id=<?php echo (int)$thread['id']; ?>" style="margin:0; display:flex; gap:5px;">
+                    <input type="hidden" name="csrf_token" value="<?php echo generateToken(); ?>">
                     <input type="hidden" name="thread_id" value="<?php echo (int)$thread['id']; ?>">
                     
                     <button type="submit" name="mod_action" value="toggle_lock" class="btn-nexus-edit" title="Lock/Unlock">
@@ -75,31 +76,33 @@ $can_actually_post = ($myId > 0 && $myStanding < 3 && $myPriv >= $effective_min_
                 </form>
             <?php endif; ?>
 
-            <a href="?p=viewboard&id=<?php echo $thread['board_id']; ?>" 
+            <a href="?p=viewboard&id=<?php echo (int)$thread['board_id']; ?>" 
                style="text-decoration: none; background: #111; color: #ccc; border: 1px solid #333; padding: 8px 18px; font-size: 0.75em; font-weight: bold; letter-spacing: 1px; display: inline-flex; align-items: center; gap: 10px; transition: 0.2s;">
                 <i class="fas fa-chevron-left" style="font-size: 0.8em;"></i> BACK
             </a>
         </div>
     </div>
 
-    <?php while($p = $posts_res->fetch_assoc()): 
-        $is_author = ($myId > 0 && $myId == $p['author_id']);
-        $can_edit = ($can_actually_post && $is_author) || $myPriv >= 3;
-        $isAdmin = (isset($p['priv_level']) && (int)$p['priv_level'] >= 4);
-        $adminBorderStyle = $isAdmin ? 'border-left: 4px solid #ff0000 !important;' : '';
-        $adminNameStyle = $isAdmin ? 'color: #ff0000 !important; font-weight: bold !important;' : 'color: var(--glow-blue); font-weight: bold;';
+    <?php 
+    // FIX: Wir iterieren nun über das PDO-Array aus der Logic
+    if(!empty($posts)):
+        foreach($posts as $p): 
+            $is_author = ($myId > 0 && $myId == $p['author_id']);
+            $can_edit = ($can_actually_post && $is_author) || $myPriv >= 3;
+            $isAdmin = (isset($p['priv_level']) && (int)$p['priv_level'] >= 4);
+            $adminBorderStyle = $isAdmin ? 'border-left: 4px solid #ff0000 !important;' : '';
+            $adminNameStyle = $isAdmin ? 'color: #ff0000 !important; font-weight: bold !important;' : 'color: var(--glow-blue); font-weight: bold;';
     ?>
         <div class="admin-box" style="padding:0; margin-bottom:20px; display:flex; min-height:200px; background:rgba(5,5,5,0.95); <?php echo $adminBorderStyle; ?>">
             <div style="width:180px; padding:20px; background:rgba(255,255,255,0.02); text-align:center; border-right:1px solid #111;">
                 <?php if(!empty($p['avatar_url'])): ?>
-                    <img src="<?php echo htmlspecialchars($p['avatar_url']); ?>" style="width:80px; height:80px; border:1px solid #333; object-fit:cover; margin-bottom:10px;">
+                    <img src="<?php echo h($p['avatar_url']); ?>" style="width:80px; height:80px; border:1px solid #333; object-fit:cover; margin-bottom:10px;">
                 <?php endif; ?>
-                <div style="<?php echo $adminNameStyle; ?>"><?php echo htmlspecialchars($p['username'] ?? 'Ghost'); ?></div>
-                <div style="color:var(--glow-gold); font-size:0.75em;"><?php echo htmlspecialchars($p['user_title'] ?? 'Soul'); ?></div>
+                <div style="<?php echo $adminNameStyle; ?>"><?php echo h($p['username'] ?? 'Ghost'); ?></div>
+                <div style="color:var(--glow-gold); font-size:0.75em;"><?php echo h($p['user_title'] ?? 'Soul'); ?></div>
                 
-
                 <?php echo renderRankStars($p['priv_level'] ?? 0); ?>
-                   <div style="margin-top: 8px; font-size: 0.7em; color: #555; text-transform: uppercase; letter-spacing: 1px;">
+                <div style="margin-top: 8px; font-size: 0.7em; color: #555; text-transform: uppercase; letter-spacing: 1px;">
                     Posts: <span style="color: var(--glow-blue); font-weight: bold;"><?php echo (int)($p['forum_posts'] ?? 0); ?></span>
                 </div>
             </div>
@@ -108,8 +111,9 @@ $can_actually_post = ($myId > 0 && $myStanding < 3 && $myPriv >= $effective_min_
                 <div style="font-size:0.7em; color:#444; position:absolute; top:10px; right:15px; display:flex; gap:15px; align-items:center;">
                     <?php if ($myPriv >= 3): ?>
                         <form method="POST" action="index.php?p=viewthread&id=<?php echo (int)$thread['id']; ?>" style="margin:0;">
+                            <input type="hidden" name="csrf_token" value="<?php echo generateToken(); ?>">
                             <input type="hidden" name="mod_action" value="delete_post">
-                            <input type="hidden" name="post_id" value="<?php echo $p['id']; ?>">
+                            <input type="hidden" name="post_id" value="<?php echo (int)$p['id']; ?>">
                             <button type="submit" style="background:none; border:none; color:var(--error-red); cursor:pointer;" onclick="return confirm('Kill this specific post?')">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
@@ -117,16 +121,16 @@ $can_actually_post = ($myId > 0 && $myStanding < 3 && $myPriv >= $effective_min_
                     <?php endif; ?>
 
                     <?php if($can_edit): ?>
-                        <a href="?p=editpost&id=<?php echo $p['id']; ?>" style="color:var(--glow-blue); text-decoration:none; font-weight:bold;"><i class="fas fa-edit"></i> EDIT</a>
+                        <a href="?p=editpost&id=<?php echo (int)$p['id']; ?>" style="color:var(--glow-blue); text-decoration:none; font-weight:bold;"><i class="fas fa-edit"></i> EDIT</a>
                     <?php endif; ?>
 
                     <?php if($can_actually_post && !$thread['is_locked']): ?>
-                        <a href="#quick-reply-box" onclick="quotePost('<?php echo addslashes($p['username']); ?>', 'post-content-<?php echo $p['id']; ?>')" style="color:var(--glow-gold); text-decoration:none;"><i class="fas fa-quote-left"></i> QUOTE</a>
+                        <a href="#quick-reply-box" onclick="quotePost('<?php echo addslashes($p['username'] ?? 'Ghost'); ?>', 'post-content-<?php echo (int)$p['id']; ?>')" style="color:var(--glow-gold); text-decoration:none;"><i class="fas fa-quote-left"></i> QUOTE</a>
                     <?php endif; ?>
                     <span><?php echo date("d.m.Y - H:i", strtotime($p['created_at'])); ?></span>
                 </div>
 
-                <div id="post-content-<?php echo $p['id']; ?>" style="color:#ccc; line-height:1.7; margin-top:15px; flex-grow: 1;">
+                <div id="post-content-<?php echo (int)$p['id']; ?>" style="color:#ccc; line-height:1.7; margin-top:15px; flex-grow: 1;">
                      <?php echo parseBBCode($p['content']); ?>
                 </div>
 
@@ -137,11 +141,12 @@ $can_actually_post = ($myId > 0 && $myStanding < 3 && $myPriv >= $effective_min_
                 <?php endif; ?>
             </div>
         </div>
-    <?php endwhile; ?>
+    <?php endforeach; endif; ?>
 
     <?php if($can_actually_post && !$thread['is_locked']): ?>
         <div id="quick-reply-box" class="admin-box" style="padding:25px;">
             <form method="POST" action="index.php?p=viewthread&id=<?php echo (int)$thread['id']; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo generateToken(); ?>">
                 <textarea name="reply_content" required rows="6" style="width:100%; padding:15px; background:#000; border:1px solid #222; color:#ccc;"></textarea>
                 <button type="submit" name="submit_reply" class="btn-add-user" style="margin-top:15px;">POST REPLY</button>
             </form>

@@ -1,22 +1,32 @@
 <?php
 /**
- * PVE QUEST VIEW - Aldhran V1.0 - Standalone
- * Source: dataquest (Flat Table)
+ * PVE QUEST VIEW - Aldhran Enterprise
+ * Version: 2.0.0 - SECURITY: PDO Migration & Dynamic Filtering
  */
 require_once('includes/db.php');
 
-// 1. Filter-Parameter
-$search = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
+// 1. Filter-Parameter via PDO-Array vorbereiten
+$search = $_GET['search'] ?? '';
 $where_clauses = ["1=1"];
+$params = [];
 
 if (!empty($search)) {
-    $where_clauses[] = "Name LIKE '%$search%'";
+    $where_clauses[] = "Name LIKE ?";
+    $params[] = "%$search%";
 }
 
 $where_sql = "WHERE " . implode(' AND ', $where_clauses);
 
-// Abfrage aus dataquest (nutzt Standard-Spalten ID, Name, MinLevel)
-$quests = $conn->query("SELECT ID, Name, MinLevel FROM dataquest $where_sql ORDER BY MinLevel ASC LIMIT 100");
+// 2. Abfrage aus dataquest via PDO Prepared Statement
+$stmt_quests = $db->prepare("
+    SELECT ID, Name, MinLevel 
+    FROM dataquest 
+    $where_sql 
+    ORDER BY MinLevel ASC 
+    LIMIT 100
+");
+$stmt_quests->execute($params);
+$quests = $stmt_quests->fetchAll();
 ?>
 
 <style>
@@ -70,21 +80,21 @@ $quests = $conn->query("SELECT ID, Name, MinLevel FROM dataquest $where_sql ORDE
 
     <form method="GET" style="display:flex; gap:10px; margin-bottom: 30px;">
         <input type="hidden" name="p" value="pve_quests">
-        <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" class="um-input" placeholder="Search chronicles..." style="flex:1;">
+        <input type="text" name="search" value="<?php echo h($search); ?>" class="um-input" placeholder="Search chronicles..." style="flex:1;">
         <button type="submit" class="btn-gold" style="font-size:10px; padding:0 20px;">FILTER</button>
     </form>
 
     <div class="quest-list">
-        <?php if ($quests && $quests->num_rows > 0): ?>
-            <?php while($q = $quests->fetch_assoc()): ?>
+        <?php if ($quests): ?>
+            <?php foreach($quests as $q): ?>
                 <div class="quest-card">
                     <div class="quest-info">
                         <span>Level <?php echo (int)($q['MinLevel'] ?? 1); ?></span>
-                        <h3><?php echo htmlspecialchars($q['Name'] ?? 'Unknown Quest'); ?></h3>
+                        <h3><?php echo h($q['Name'] ?? 'Unknown Quest'); ?></h3>
                     </div>
                     <a href="?p=pve_quest_detail&id=<?php echo urlencode((string)$q['ID']); ?>" class="btn-view-quest">READ ARCHIVE</a>
                 </div>
-            <?php endwhile; ?>
+            <?php endforeach; ?>
         <?php else: ?>
             <div style="text-align: center; padding: 50px; color: #222; border: 1px dashed #111;">No entries found in the data archives.</div>
         <?php endif; ?>

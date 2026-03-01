@@ -1,21 +1,32 @@
 <?php
 /**
- * ADMIN TOOL - IP AUDITOR V1.1
+ * ADMIN TOOL - IP AUDITOR V2.0
  * Location: /modules/admin_ip_audit.php
+ * Version: 2.0.0 - SECURITY: PDO Migration & CSRF Protection
  */
 require_once('includes/db.php');
 
-// --- 1. LOGIK: IP WHITELISTEN ---
+if ($userPriv < 4) { die("Access Denied."); } // Nur für Staff
+
+// --- 1. LOGIK: IP WHITELISTEN (PDO Syntax) ---
 if (isset($_POST['approve_ip']) && !empty($_POST['ip_to_approve'])) {
-    $ip_to_save = mysqli_real_escape_string($conn, $_POST['ip_to_approve']);
-    $admin_name = mysqli_real_escape_string($conn, $_SESSION['username'] ?? 'System');
+    // Enterprise V2: CSRF Check
+    checkToken($_POST['csrf_token'] ?? '');
+
+    $ip_to_save = $_POST['ip_to_approve'];
+    $admin_id   = $_SESSION['user_id'] ?? 0;
+    $admin_name = $_SESSION['username'] ?? 'System';
     
-    $conn->query("INSERT IGNORE INTO household_registrations (ip_address, approved_by, reason) 
-                  VALUES ('$ip_to_save', '$admin_name', 'Manual GM Approval')");
+    // PDO Insert (Sicher gegen SQL Injection)
+    $stmt_ins = $db->prepare("INSERT IGNORE INTO household_registrations (ip_address, approved_by, reason) VALUES (?, ?, 'Manual GM Approval')");
     
-    // Seite neu laden, um Änderungen zu sehen
-    header("Location: index.php?p=admin_ip_audit&msg=approved");
-    exit;
+    if ($stmt_ins->execute([$ip_to_save, $admin_name])) {
+        // ENTERPRISE LOGGING: Wir halten fest, wer die IP freigegeben hat
+        aldhran_log("IP_APPROVED", "GM $admin_name approved IP: $ip_to_save", $admin_id);
+        
+        header("Location: index.php?p=admin_ip_audit&msg=approved");
+        exit;
+    }
 }
 
 // --- 2. ABFRAGE DER DOPPELTEN IPs ---
@@ -26,7 +37,8 @@ $audit_sql = "
     GROUP BY LastLoginIP
     HAVING AccountCount > 1
 ";
-$res = $conn->query($audit_sql);
+$stmt_audit = $db->query($audit_sql);
+$results = $stmt_audit->fetchAll();
 
 echo '<div class="admin-container">';
     echo '<div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 20px;">';
@@ -38,26 +50,29 @@ echo '<div class="admin-container">';
     echo '<thead><tr><th>IP Address</th><th>Count</th><th>Detected Accounts</th><th>Status</th><th>Actions</th></tr></thead>';
     echo '<tbody>';
 
-    if ($res && $res->num_rows > 0) {
-        while ($row = $res->fetch_assoc()) {
+    if ($results) {
+        foreach ($results as $row) {
             $ip = $row['LastLoginIP'];
             
-            // Check gegen die CMS-Tabelle
-            $check_reg = $conn->query("SELECT approved_by FROM household_registrations WHERE ip_address = '$ip'");
-            $is_registered = ($check_reg && $check_reg->num_rows > 0);
+            // Check gegen die CMS-Tabelle via PDO
+            $stmt_check = $db->prepare("SELECT approved_by FROM household_registrations WHERE ip_address = ?");
+            $stmt_check->execute([$ip]);
+            $reg_data = $stmt_check->fetch();
             
+            $is_registered = (bool)$reg_data;
             $status_style = $is_registered ? 'color:#4caf50;' : 'color:#f44336; font-weight:bold;';
             $status_text = $is_registered ? '<i class="fas fa-check-shield"></i> APPROVED' : '<i class="fas fa-exclamation-triangle"></i> VIOLATION';
 
             echo "<tr>";
-                echo "<td><code style='color:#eee;'>$ip</code></td>";
-                echo "<td style='text-align:center;'><strong>" . $row['AccountCount'] . "</strong></td>";
-                echo "<td><span style='font-size:10px; color:#aaa;'>" . $row['AccountNames'] . "</span></td>";
+                echo "<td><code style='color:#eee;'>" . h($ip) . "</code></td>";
+                echo "<td style='text-align:center;'><strong>" . (int)$row['AccountCount'] . "</strong></td>";
+                echo "<td><span style='font-size:10px; color:#aaa;'>" . h($row['AccountNames']) . "</span></td>";
                 echo "<td style='$status_style'>$status_text</td>";
                 echo "<td>";
                     if (!$is_registered) {
                         echo "<form method='POST' style='display:inline;'>";
-                        echo "<input type='hidden' name='ip_to_approve' value='$ip'>";
+                        echo "<input type='hidden' name='csrf_token' value='" . generateToken() . "'>";
+                        echo "<input type='hidden' name='ip_to_approve' value='" . h($ip) . "'>";
                         echo "<button type='submit' name='approve_ip' class='btn-gold' style='padding:4px 8px; font-size:10px; margin-right:5px; cursor:pointer;'>APPROVE IP</button>";
                         echo "</form>";
                     }

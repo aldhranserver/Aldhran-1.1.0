@@ -1,7 +1,7 @@
 <?php
 /**
  * Aldhran Freeshard - Header
- * Version: 1.0.0 - SEO & Social Media Hardening (Meta Tags)
+ * Version: 2.0.0 - SECURITY: PDO Migration & HTTPS Enforcement
  */
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 require_once('includes/db.php');
@@ -17,11 +17,14 @@ if ($fp) {
     fclose($fp);
 }
 
-// User & Access Check
+// User & Access Check via PDO
 if (isset($_SESSION['user_id'])) {
     $uid = (int)$_SESSION['user_id'];
-    $check_user = $conn->query("SELECT standing, priv_level FROM users WHERE id = $uid");
-    if ($check_user && $u_data = $check_user->fetch_assoc()) {
+    $stmt_u = $db->prepare("SELECT standing, priv_level FROM users WHERE id = ?");
+    $stmt_u->execute([$uid]);
+    $u_data = $stmt_u->fetch();
+
+    if ($u_data) {
         $_SESSION['standing'] = (int)$u_data['standing'];
         if ($_SESSION['standing'] >= 5) {
             $_SESSION['priv_level'] = 0;
@@ -33,24 +36,21 @@ if (isset($_SESSION['user_id'])) {
 
 $page = $_GET['p'] ?? 'home'; 
 
-// Falls die Daten noch nicht in der index.php geladen wurden (als Fallback)
+// Fallback: Falls index.php die Daten noch nicht bereitgestellt hat
 if (!isset($data) && $page) {
-    $stmt = $conn->prepare("SELECT title, content FROM pages WHERE slug = ?");
-    $stmt->bind_param("s", $page);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    if ($res->num_rows > 0) {
-        $data = $res->fetch_assoc();
-    }
+    $stmt_p = $db->prepare("SELECT title, content FROM pages WHERE slug = ?");
+    $stmt_p->execute([$page]);
+    $data = $stmt_p->fetch();
 }
 
-// --- DYNAMISCHE META-TAGS BERECHNEN ---
+// --- DYNAMISCHE META-TAGS (HTTPS & SEO) ---
 $meta_title = h($data['title'] ?? "Aldhran Freeshard - Chronicles of Atlantis");
 $raw_content = $data['content'] ?? "Explore the realms of Atlantis. Join the Aldhran Freeshard today.";
-// HTML entfernen, Zeilenumbrüche säubern und auf 160 Zeichen für die Vorschau kürzen
 $meta_desc = mb_substr(trim(preg_replace('/\s+/', ' ', strip_tags($raw_content))), 0, 160) . "...";
-$site_url = "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-$logo_url = "http://" . $_SERVER['HTTP_HOST'] . "/assets/img/logo.png";
+
+// Nutzt die SITE_URL Konstante aus der db.php für korrekte HTTPS-Links
+$current_url = SITE_URL . "/index.php?p=" . h($page);
+$logo_url = SITE_URL . "/assets/img/logo.png";
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -63,12 +63,13 @@ $logo_url = "http://" . $_SERVER['HTTP_HOST'] . "/assets/img/logo.png";
     <meta name="description" content="<?php echo $meta_desc; ?>">
 
     <meta property="og:type" content="website">
-    <meta property="og:url" content="<?php echo $site_url; ?>">
+    <meta property="og:url" content="<?php echo $current_url; ?>">
     <meta property="og:title" content="Aldhran - <?php echo $meta_title; ?>">
     <meta property="og:description" content="<?php echo $meta_desc; ?>">
     <meta property="og:image" content="<?php echo $logo_url; ?>">
 
     <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="<?php echo $current_url; ?>">
     <meta property="twitter:title" content="Aldhran - <?php echo $meta_title; ?>">
     <meta property="twitter:description" content="<?php echo $meta_desc; ?>">
     <meta property="twitter:image" content="<?php echo $logo_url; ?>">
