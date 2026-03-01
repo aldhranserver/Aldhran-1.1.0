@@ -1,0 +1,37 @@
+# ----------------------------------------------------------------------
+# ALDHRAN PRODUCTION SECURITY & REDIRECTS
+# ----------------------------------------------------------------------
+
+# 1. Automatische Umleitung auf HTTPS
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# 2. Verzeichnis-Browsing deaktivieren
+Options -Indexes
+
+# 3. Schutz sensibler System-Dateien
+<Files "db.php">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+<Files "php_errors.log">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+# 4. EMERGENCY BYPASS PROTECTION (fix_pw.php)
+# Blockiert den Zugriff auf das Passwort-Reset-Script für alle außer dich.
+<Files "fix_pw.php">
+    Order Allow,Deny
+    Deny from all
+    # Wenn du dich ausgesperrt hast: Entferne das '#' unten und trag deine IP ein.
+    # Allow from 127.0.0.1
+</Files>
+
+# 5. Schutz von Punkt-Dateien (.env, .git, etc.)
+<FilesMatch "^\.">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>

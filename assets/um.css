@@ -1,0 +1,103 @@
+<?php if (!isset($can_edit) || !$can_edit) return; ?>
+
+<link rel="stylesheet" href="assets/css/um.css?v=<?php echo time(); ?>">
+
+<div class="um-nexus-wrapper">
+    <div class="um-nexus-header">
+        <h1 class="cinzel-gold" style="margin: 0; font-size: 1.8em;">User Management</h1>
+        <a href="index.php?p=um&action=new" class="btn-add-user">ADD USER</a>
+    </div>
+
+    <div class="um-search-container">
+        <form method="POST">
+            <input type="text" name="um_search" class="um-input-search" 
+                   placeholder="Search User by Name, Email or IP..." 
+                   value="<?php echo htmlspecialchars($search_term ?? ''); ?>">
+        </form>
+    </div>
+
+    <form method="POST" action="index.php?p=um">
+        <div class="um-list-container">
+            <?php while($u = $users->fetch_assoc()): 
+                // Multi-Account Check für die IP-Anzeige
+                $current_ip = $u['last_ip'] ?? '0.0.0.0';
+                $multi_stmt = $conn->query("SELECT COUNT(id) FROM users WHERE last_ip = '$current_ip' AND id != ".$u['id']);
+                $multi_count = $multi_stmt->fetch_row()[0];
+
+                // Badge Mapping
+                $badge_class = 'um-badge-active';
+                if($u['standing'] >= 4) $badge_class = 'um-badge-banned';
+                if($u['priv_level'] == 5) $badge_class = 'um-badge-super';
+            ?>
+                <div class="um-user-card">
+                    <div class="um-col-check" style="width: 40px;">
+                        <?php if($u['priv_level'] < 5): ?>
+                            <input type="checkbox" name="selected_users[]" value="<?php echo $u['id']; ?>" class="um-check-custom">
+                        <?php endif; ?>
+                    </div>
+                    
+                    <div class="um-user-info-primary">
+                        <span style="display:block; margin-bottom: 2px;">
+                            <?php echo htmlspecialchars($u['username']); ?>: User / IP Monitoring
+                        </span>
+                        <small style="color: <?php echo ($multi_count > 0) ? '#ff4444' : '#666'; ?>; font-family: sans-serif; font-size: 0.7em;">
+                            IP: <?php echo $current_ip; ?> <?php echo ($multi_count > 0) ? "($multi_count Multis)" : ""; ?>
+                        </small>
+                    </div>
+
+                    <div class="um-user-info-secondary">
+                        <div style="font-size: 0.7em; text-transform: uppercase; color: #555; margin-bottom: 5px;">Status</div>
+                        <span class="um-badge <?php echo $badge_class; ?>">
+                            <?php echo getStandingText($u['standing']); ?>
+                        </span>
+                    </div>
+
+                    <div class="um-user-info-secondary">
+                        <div style="font-size: 0.7em; text-transform: uppercase; color: #555; margin-bottom: 5px;">Permissions</div>
+                        <span style="font-family: sans-serif; font-size: 0.85em;">
+                            CMS: <?php echo $u['priv_level']; ?> | IG: <?php echo (isset($u['ingame_priv']) ? $u['ingame_priv'] : '1'); ?>
+                        </span>
+                    </div>
+
+                    <div class="um-col-actions" style="margin-left: auto;">
+                        <a href="index.php?p=um&edit_id=<?php echo $u['id']; ?>&page=<?php echo $page; ?>" class="btn-nexus-edit">
+                            Edit
+                        </a>
+                    </div>
+                </div>
+            <?php endwhile; ?>
+        </div>
+
+        <div style="margin-top: 30px; display: flex; align-items: center; gap: 15px; padding: 20px; background: rgba(255,255,255,0.02); border-radius: 15px; border: 1px solid #222;">
+            <select name="bulk_action" class="um-input" style="width: auto; padding: 8px 15px !important; border-radius: 10px;">
+                <option value="">-- Bulk Action --</option>
+                <option value="ban">Set Standing: Banned (4)</option>
+                <option value="active">Set Standing: Active (0)</option>
+            </select>
+            <button type="submit" name="um_action" value="execute_bulk" class="btn-nexus-edit" style="border-color: var(--nexus-red-border);">
+                APPLY TO SELECTED
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+/**
+ * NEXUS UX CORE
+ */
+function closeNexus() {
+    const overlay = document.querySelector('.um-editor-overlay');
+    if (overlay) {
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+            const url = new URL(window.location);
+            url.searchParams.delete('edit_id');
+            window.location.href = url.href; // Seite neu laden um Editor zu schließen
+        }, 300);
+    }
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === "Escape") closeNexus();
+});
+</script>

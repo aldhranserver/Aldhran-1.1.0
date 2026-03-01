@@ -1,0 +1,14 @@
+# Datenbank-Zugangsdaten (Die Kronjuwelen)
+db.php
+config.php
+settings.ini
+
+# Logs und temporäre Dateien
+*.log
+/logs/
+/tmp/
+/cache/
+
+# Systemdateien
+.DS_Store
+Thumbs.db
