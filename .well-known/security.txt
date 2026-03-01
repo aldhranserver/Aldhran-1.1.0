@@ -1,0 +1,6 @@
+Contact: mailto:aldhranserver@gmail.com
+Expires: 2027-03-01T08:00:00.000Z
+Acknowledgements: https://github.com/aldhranserver/Aldhran-1.1.0/blob/master/HALL_OF_FAME.md
+Policy: https://github.com/aldhranserver/Aldhran-1.1.0/blob/master/SECURITY.md
+Hiring: https://aldhran-server.eu/jobs
+Canonical: https://aldhran-server.eu/.well-known/security.txt

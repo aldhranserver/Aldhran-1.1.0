@@ -106,9 +106,12 @@ if (isset($_POST['um_action']) && $_POST['um_action'] === 'create_user') {
     if ($myPriv < 4) { die("Restricted."); }
     $u_name = mysqli_real_escape_string($conn, trim($_POST['u_name'] ?? ''));
     $u_email = mysqli_real_escape_string($conn, trim($_POST['u_email'] ?? ''));
-    $u_pass = $_POST['u_pass'] ?? '';
+	$u_pass = $_POST['u_pass'] ?? '';
     $u_priv = (int)($_POST['u_priv'] ?? 1);
-    $hashed_pass_cms = password_hash($u_pass, PASSWORD_BCRYPT);
+    
+    // Aldhran V1.1 Security: Peppered Hashing
+    $pepperedPass = hash_hmac("sha256", $u_pass, ALDRAN_PEPPER);
+    $hashed_pass_cms = password_hash($pepperedPass, PASSWORD_BCRYPT);
     $conn->query("INSERT INTO users (username, email, password, priv_level, standing, is_verified, forum_posts) VALUES ('$u_name', '$u_email', '$hashed_pass_cms', $u_priv, 0, 1, 0)");
     $res = ""; for ($i = 0; $i < strlen($u_pass); $i++) { $res .= chr(0) . $u_pass[$i]; }
     $dol_final_hash = "##" . strtoupper(md5($res));
@@ -127,9 +130,12 @@ if (isset($_POST['um_action']) && $_POST['um_action'] === 'update_full') {
         $reason = mysqli_real_escape_string($conn, $_POST['u_reason'] ?? 'No reason provided.');
 
         // 1. PASSWORD SYNC
-        if (!empty($_POST['u_new_password'])) {
-            $plain_pass = $_POST['u_new_password'];
-            $hashed_pass_cms = password_hash($plain_pass, PASSWORD_BCRYPT);
+       if (!empty($_POST['u_new_password'])) {
+            $plain_pass = $_POST['u_new_password']; 
+            // Aldhran V1.1 Security: Peppered Hashing
+            $pepperedPass = hash_hmac("sha256", $plain_pass, ALDRAN_PEPPER);
+            $hashed_pass_cms = password_hash($pepperedPass, PASSWORD_BCRYPT);
+            
             $conn->query("UPDATE users SET password = '$hashed_pass_cms' WHERE id = $target_id");
             $res = ""; for ($i = 0; $i < strlen($plain_pass); $i++) { $res .= chr(0) . $plain_pass[$i]; }
             $dol_final_hash = "##" . strtoupper(md5($res));

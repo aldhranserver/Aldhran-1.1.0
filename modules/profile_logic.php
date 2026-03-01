@@ -57,9 +57,11 @@ if (isset($_POST['update_profile']) && !$is_restricted) {
     // CMS Update
     $conn->query("UPDATE users SET languages = '$langs', description = '$desc', forum_signature = '$sig' WHERE id = $uid");
 
-    // DOL Password Change
+   // DOL Password Change
     if (!empty($new_pw) && strlen($new_pw) >= 6) {
-        $hash = password_hash($new_pw, PASSWORD_BCRYPT);
+        // Aldhran V1.1 Security: Peppered Hashing für CMS
+        $pepperedPass = hash_hmac("sha256", $new_pw, ALDRAN_PEPPER);
+        $hash = password_hash($pepperedPass, PASSWORD_BCRYPT);
         
         // 1. Update CMS Password
         $conn->query("UPDATE users SET password = '$hash' WHERE id = $uid");

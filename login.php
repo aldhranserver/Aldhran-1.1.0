@@ -59,7 +59,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
     checkToken($_POST['csrf_token'] ?? '');
 
     $user_name = trim($_POST['username'] ?? '');
-    $pass = $_POST['password'] ?? '';
+    $pass_raw = $_POST['password'] ?? '';
+    // Aldhran V1.1 Security: Peppered Hashing
+    $pass = hash_hmac("sha256", $pass_raw, ALDRAN_PEPPER);
 
     $stmt = $conn->prepare("SELECT id, username, password, email, priv_level, standing, is_verified FROM users WHERE username = ?");
     $stmt->bind_param("s", $user_name);

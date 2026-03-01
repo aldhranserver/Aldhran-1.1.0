@@ -58,7 +58,10 @@ if (isset($_POST['register_user'])) {
             $error = "This identity or email is already taken.";
         } else {
             $v_code = bin2hex(random_bytes(16));
-            $cms_hash = password_hash($pass, PASSWORD_BCRYPT);
+            
+            // Aldhran V1.1 Security: Peppered Hashing für CMS
+            $pepperedPass = hash_hmac("sha256", $pass, ALDRAN_PEPPER);
+            $cms_hash = password_hash($pepperedPass, PASSWORD_BCRYPT);
             
             $conn->begin_transaction();
 
