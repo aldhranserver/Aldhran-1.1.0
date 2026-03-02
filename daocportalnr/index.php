@@ -2,7 +2,7 @@
 /**
  * DAoC Portal NR - Server Status Page
  * Location: htdocs/daocportalnr/index.php
- * Version: 1.5.0 - Handshake Integration
+ * Version: 1.5.1 - Handshake & Path Fix
  */
 
 require_once('../includes/db.php'); 
@@ -14,8 +14,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $is_logged_in = isset($_SESSION['portal_user_id']);
 
-// --- NEU: HANDSHAKE PRÜFUNG ---
-// Wir prüfen, ob der Launcher innerhalb der letzten 10 Minuten einen Ping gesendet hat
+// --- HANDSHAKE PRÜFUNG ---
 $launcher_timeout = 600; // 10 Minuten
 $launcher_ready = false;
 
@@ -23,11 +22,9 @@ if (isset($_SESSION['launcher_present']) && $_SESSION['launcher_present'] === tr
     if (isset($_SESSION['last_ping_time']) && (time() - $_SESSION['last_ping_time']) < $launcher_timeout) {
         $launcher_ready = true;
     } else {
-        // Timeout abgelaufen - Status zurücksetzen
         $_SESSION['launcher_present'] = false;
     }
 }
-// ------------------------------
 
 function checkServer($ip, $port) {
     $fp = @fsockopen($ip, $port, $errno, $errstr, 0.5); 
@@ -57,16 +54,9 @@ try {
         .portal-wrapper { max-width: 1000px; margin: 20px auto; border: 1px solid #222; background: #0a0a0a; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
         .portal-header { background: #111; padding: 25px; border-bottom: 2px solid #c5a059; text-align: center; }
         .portal-header h1 { font-family: 'Cinzel', serif; color: #c5a059; margin: 0; letter-spacing: 3px; text-transform: uppercase; }
-        
-        /* Neuer Launcher Status Balken */
-        .launcher-notice { 
-            max-width: 1000px; margin: 0 auto 15px auto; padding: 10px; 
-            text-align: center; font-family: 'Cinzel'; font-size: 11px;
-            border: 1px solid #222;
-        }
+        .launcher-notice { max-width: 1000px; margin: 0 auto 15px auto; padding: 10px; text-align: center; font-family: 'Cinzel'; font-size: 11px; border: 1px solid #222; }
         .launcher-ready { background: rgba(0, 255, 0, 0.05); color: #00ff00; border-color: rgba(0, 255, 0, 0.2); }
         .launcher-missing { background: rgba(197, 160, 89, 0.05); color: #c5a059; border-color: #c5a059; }
-
         .server-grid { display: grid; grid-template-columns: 1fr; gap: 1px; background: #1a1a1a; }
         .server-row { display: grid; grid-template-columns: 2fr 100px 80px 80px 120px 120px; background: #0c0c0c; padding: 15px 20px; align-items: center; transition: 0.2s; }
         .server-row:hover { background: #151515; box-shadow: inset 5px 0 0 #c5a059; }
@@ -92,7 +82,7 @@ try {
 <?php else: ?>
     <div class="launcher-notice launcher-missing">
         <i class="fas fa-exclamation-triangle"></i> Launcher not detected. 
-        <a href="download/DAoCPortalNR.zip" style="color: #fff; text-decoration: underline; margin-left: 10px;">Download Launcher</a> 
+        <a href="DOWNLOADS/daocportalnr.zip" style="color: #fff; text-decoration: underline; margin-left: 10px;">Download Launcher</a> 
         to enable direct connect.
     </div>
 <?php endif; ?>
@@ -142,15 +132,9 @@ try {
                         <?php echo htmlspecialchars($srv['server_name']); ?>
                     </a>
                 </div>
-
-                <div class="val">
-                    <i class="fas fa-users" style="color: #444; font-size: 0.8em;"></i> 
-                    <?php echo (int)($srv['player_count'] ?? $srv['pop_count'] ?? 0); ?>
-                </div>
-
+                <div class="val"><i class="fas fa-users" style="color: #444; font-size: 0.8em;"></i> <?php echo (int)($srv['player_count'] ?? 0); ?></div>
                 <div class="val" style="color: #888;"><?php echo htmlspecialchars($srv['xp_rate'] ?? '1x'); ?></div>
                 <div class="val" style="color: #888;"><?php echo htmlspecialchars($srv['rp_rate'] ?? '1x'); ?></div>
-
                 <div style="display: flex; justify-content: center;">
                     <?php if($is_online): ?>
                         <div class="status-pill online">ONLINE</div>
@@ -158,16 +142,11 @@ try {
                         <div class="status-pill offline">OFFLINE</div>
                     <?php endif; ?>
                 </div>
-
                 <div style="text-align: center;">
                     <?php if($launcher_ready && $is_online): ?>
-                        <a href="daocnr://<?php echo $srv['server_ip']; ?>:<?php echo $srv['server_port']; ?>/<?php echo $_SESSION['portal_token'] ?? 'guest'; ?>" class="btn-nexus" style="width: 80px; background: rgba(0,255,0,0.1); border-color: #00ff00; color: #00ff00;">
-                            CONNECT
-                        </a>
+                        <a href="daocnr://<?php echo $srv['server_ip']; ?>:<?php echo $srv['server_port']; ?>/<?php echo $_SESSION['portal_token'] ?? 'guest'; ?>" class="btn-nexus" style="width: 80px; background: rgba(0,255,0,0.1); border-color: #00ff00; color: #00ff00;">CONNECT</a>
                     <?php else: ?>
-                        <a href="server_display.php?id=<?php echo $srv['id']; ?>" class="btn-nexus" style="width: 80px;">
-                            DETAILS
-                        </a>
+                        <a href="server_display.php?id=<?php echo $srv['id']; ?>" class="btn-nexus" style="width: 80px;">DETAILS</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -175,8 +154,6 @@ try {
         <?php endif; ?>
     </div>
 </div>
-
 <div class="nrfooter">&copy; <?php echo date("Y"); ?> DAoC Portal Nostalgic Revival - Refurbished by Aldhran</div>
-
 </body>
 </html>

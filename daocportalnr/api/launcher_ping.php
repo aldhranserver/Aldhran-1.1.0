@@ -1,7 +1,15 @@
 <?php
-session_start();
+/**
+ * DAoC Portal NR - Launcher Handshake API
+ * Location: htdocs/daocportalnr/api/launcher_ping.php
+ */
 
-// Header for JSON Response
+// Dieselbe Session-Konfiguration wie in der index.php
+if (session_status() === PHP_SESSION_NONE) { 
+    session_set_cookie_params(0, '/'); 
+    session_start(); 
+}
+
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
