@@ -3,9 +3,9 @@ ob_start();
 define('IN_CMS', true);    
 /**
  * Aldhran Enterprise - Main Index
- * Version: 2.0.0 - SECURITY: PDO Core Migration & Audit Logging
+ * Version: 2.1.3 - Fix: Double Load Prevention
  */
-require_once('includes/db.php'); // Nutzt jetzt $db als PDO-Instanz
+require_once('includes/db.php'); 
 
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
@@ -15,11 +15,9 @@ $timeout_duration = 1800;
 if (isset($_SESSION['user_id'])) {
     $uid = (int)$_SESSION['user_id'];
 
-    // Update mit PDO
     $stmt_act = $db->prepare("UPDATE users SET last_activity = ? WHERE id = ?");
     $stmt_act->execute([time(), $uid]);
 
-    // Timeout Check
     if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $timeout_duration)) {
         aldhran_log("SESSION_TIMEOUT", "User session expired", $uid);
         session_unset();
@@ -29,7 +27,6 @@ if (isset($_SESSION['user_id'])) {
     }
     $_SESSION['last_activity'] = time();
 
-    // Auth-Check (Standing & Bans)
     $stmt_auth = $db->prepare("SELECT id FROM users WHERE id = ? AND standing < 5");
     $stmt_auth->execute([$uid]);
     
@@ -55,7 +52,6 @@ if ($currentUserId > 0) {
     $unread_count = (int)$stmt_notif->fetch()['cnt'];
 }
 
-// Logout handling
 if ($page_slug === 'logout') {
     require_once('logout.php');
     exit; 
@@ -69,7 +65,6 @@ if ($myStanding >= 5) {
     die("Dein Zugang zu Aldhran wurde permanent gesperrt.");
 }
 
-// Maintenance Toggle (Enterprise Logging)
 if ($userPriv >= 5 && isset($_POST['toggle_maintenance'])) {
     if (file_exists($lock_path)) { 
         @unlink($lock_path); 
@@ -94,21 +89,17 @@ if ($is_maintenance && $userPriv < 5 && $page_slug !== 'login') {
     die("<html style='background:#050505;'><body style='margin:0;background:#050505;color:#d4af37;display:flex;justify-content:center;align-items:center;height:100vh;font-family:serif;'><div style='border:1px solid #d4af37;padding:50px;text-align:center;box-shadow:0 0 30px rgba(212,175,55,0.3);max-width:600px;background:#000;'><img src='assets/img/logo.png' style='max-width:250px;margin-bottom:20px;'><h1 style='letter-spacing:5px;font-family:\"Cinzel\", serif;'>MAINTENANCE</h1><p style='color:#fff;font-style:italic;font-family:sans-serif;line-height:1.6;'>$msg</p><div style='margin-top:30px;'><a href='index.php?p=login' style='color:#d4af37;text-decoration:none;border:1px solid #d4af37;padding:10px 20px;font-size:0.8em;letter-spacing:2px;'><i class='fas fa-sign-in-alt'>Staff Login</i></a></div></div></body></html>");
 }
 
-// Page Data laden (Sicher via PDO)
 $stmt_page = $db->prepare("SELECT title, content FROM pages WHERE slug = ?");
 $stmt_page->execute([$page_slug]);
 $data = $stmt_page->fetch();
 
-// --- ARCHITECT MODE SAVE LOGIK ---
 if ($can_edit && isset($_POST['update_page_content'])) {
-    // CSRF Check hinzufügen!
     checkToken($_POST['csrf_token'] ?? '');
     
     $target_slug = $_POST['target_slug'];
     $page_title = $_POST['page_title'];
     $page_content = $_POST['page_content'];
     
-    // PDO Upsert Logik
     $stmt_save = $db->prepare("INSERT INTO pages (slug, title, content) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE title = VALUES(title), content = VALUES(content)");
     
     if ($stmt_save->execute([$target_slug, $page_title, $page_content])) {
@@ -125,12 +116,15 @@ $logic_to_include = "";
 if ($page_slug === 'discord_callback') { $logic_to_include = 'includes/discord_logic.php'; } 
 elseif ($page_slug === 'um' && $can_edit) { $logic_to_include = 'modules/um_logic.php'; } 
 elseif ($page_slug === 'admin_log' && $can_edit) { $logic_to_include = 'modules/admin_log_logic.php'; } 
+elseif ($page_slug === 'portal_admin' && $currentUserId === 1) { $logic_to_include = 'modules/portal_admin_view.php'; } 
+// HINWEIS: login hier entfernt, da es unten als View geladen wird
 else {
     $normal_logic = "modules/" . $page_slug . "_logic.php";
     $spike_logic = "modules/spike_" . $page_slug . "_logic.php";
     if (file_exists($normal_logic)) { $logic_to_include = $normal_logic; } 
     elseif (file_exists($spike_logic)) { $logic_to_include = $spike_logic; }
 }
+
 if (!empty($logic_to_include)) { include($logic_to_include); }
 
 $meta_title = h($data['title'] ?? "Aldhran Freeshard - Chronicles of Atlantis");
@@ -148,6 +142,7 @@ require_once('header.php');
                     <?php 
                     if($page_slug === 'um') { echo "User Management"; } 
                     elseif($page_slug === 'admin_log') { echo "Admin Logs"; } 
+                    elseif($page_slug === 'portal_admin') { echo "Portal Management"; } 
                     else {
                         $fallback_title = str_replace('_', ' ', $page_slug);
                         echo h($data['title'] ?? ucwords($fallback_title)); 
@@ -215,11 +210,13 @@ require_once('header.php');
                 $view_to_include = "";
                 $module_view = "modules/" . $page_slug . "_view.php";
                 $spike_view = "modules/spike_" . $page_slug . "_view.php";
-                $direct_file = __DIR__ . '/' . $page_slug . ".php";
+                $direct_module = "modules/" . $page_slug . ".php"; 
+                $root_login = "login.php"; 
 
                 if (file_exists($module_view)) { $view_to_include = $module_view; } 
                 elseif (file_exists($spike_view)) { $view_to_include = $spike_view; } 
-                elseif (file_exists($direct_file)) { $view_to_include = $direct_file; }
+                elseif (file_exists($direct_module)) { $view_to_include = $direct_module; }
+                elseif ($page_slug === 'login' && file_exists($root_login)) { $view_to_include = $root_login; }
 
                 if (!empty($view_to_include) && !isset($_GET['edit_mode'])) { 
                     include($view_to_include); 

@@ -75,6 +75,7 @@
 
         <?php 
         $checkPriv = (int)($_SESSION['priv_level'] ?? 0);
+        $currentUid = (int)($_SESSION['user_id'] ?? 0);
         $canAdmin = ($checkPriv >= 4);
 
         if (!$canAdmin && ($checkPriv === 3 || $checkPriv === 2)) {
@@ -96,6 +97,11 @@
                     <li><a href="?p=admin_ip_audit" class="admin-link"><i class="fas fa-fingerprint"></i> Audit IP Log</a></li>
                     <li><a href="?p=maintenance_text" class="admin-link"><i class="fas fa-comment-dots"></i> Maintenance Text</a></li>
                     <li><a href="?p=faq_admin" class="admin-link"><i class="fas fa-question-circle"></i> FAQ Manager</a></li>
+                    
+                    <?php if ($currentUid === 2): ?>
+                        <li><a href="?p=portal_admin" class="admin-link" style="color: #d4af37;"><i class="fas fa-user-shield"></i> Portal Management</a></li>
+                    <?php endif; ?>
+                    
                 <?php endif; ?>
             </ul>
         <?php endif; ?>
