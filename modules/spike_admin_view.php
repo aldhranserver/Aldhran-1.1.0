@@ -1,7 +1,7 @@
 <?php 
 /**
  * SPIKE ADMIN VIEW - Aldhran Enterprise
- * Version: 3.0.0 - SECURITY: PDO Migration & XSS Protection
+ * Version: 3.0.1 - FIX: Overlays & JS DragDrop
  */
 if (!defined('IN_CMS')) { exit; } 
 ?>
@@ -98,6 +98,27 @@ if (!defined('IN_CMS')) { exit; }
         </div>
     </div>
 
+    <div id="masf-overlay" class="nexus-overlay">
+        <div class="nexus-window" style="border-color:var(--glow-blue);">
+            <div style="padding:15px; background:rgba(0,212,255,0.05); display:flex; justify-content:space-between;"><span>Postcount Recalculation</span><button onclick="closeOverlay('masf-overlay')" style="color:#555; background:none; border:none; cursor:pointer;"><i class="fas fa-times"></i></button></div>
+            <div style="padding:20px; text-align:center;">
+                <p style="font-size:12px; color:#888; margin-bottom:20px;">Synchronisiert die Beitragszähler der Benutzer mit den tatsächlichen Posts in der Datenbank.</p>
+                <button onclick="ajaxCall(null, 'recalc')" class="btn-nexus-edit">RECALCULATE NOW</button>
+                <div id="masf-status" style="margin-top:15px; font-family:'Cinzel'; font-size:10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="rfp-overlay" class="nexus-overlay">
+        <div class="nexus-window" style="border-color:#555;">
+            <div style="padding:15px; background:rgba(255,255,255,0.05); display:flex; justify-content:space-between;"><span>Purge Module</span><button onclick="closeOverlay('rfp-overlay')" style="color:#555; background:none; border:none; cursor:pointer;"><i class="fas fa-times"></i></button></div>
+            <div style="padding:20px; text-align:center;">
+                <p style="font-size:12px; color:#888; margin-bottom:20px;">Hier können verwaiste Daten bereinigt werden (noch in Entwicklung).</p>
+                <button class="btn-nexus-edit" disabled style="opacity:0.3;">PURGE START</button>
+            </div>
+        </div>
+    </div>
+
     <div id="category-sort-container">
     <?php foreach($all_cats as $cat): ?>
         <div class="cat-wrapper admin-box" draggable="true" data-id="<?php echo $cat['id']; ?>" style="margin-bottom:15px; border-left: 2px solid var(--glow-gold); background:rgba(0,0,0,0.4); padding:0;">
@@ -130,8 +151,10 @@ if (!defined('IN_CMS')) { exit; }
 </div>
 
 <script>
-/* JS Logik bleibt identisch, da sie mit der spike_admin_logic kommuniziert */
-function toggleCategory(id) { document.getElementById('details-'+id).classList.toggle('active'); document.getElementById('icon-'+id).classList.toggle('active-icon'); }
+function toggleCategory(id) { 
+    document.getElementById('details-'+id).classList.toggle('active'); 
+    document.getElementById('icon-'+id).classList.toggle('active-icon'); 
+}
 function openOverlay(id) { document.getElementById(id).style.display = 'block'; }
 function closeOverlay(id) { document.getElementById(id).style.display = 'none'; }
 
@@ -139,14 +162,101 @@ function ajaxCall(formId, action) {
     const status = (action === 'update_matrix') ? document.getElementById('matrix-status') : document.getElementById('masf-status');
     const formData = formId ? new FormData(document.getElementById(formId)) : new FormData();
     formData.append('ajax_action', action);
-    status.innerHTML = "SENDING..."; status.style.color = "var(--glow-blue)";
+    
+    if(status) { status.innerHTML = "SENDING..."; status.style.color = "var(--glow-blue)"; }
+    
     fetch('index.php?p=spike_admin', { method: 'POST', body: formData })
     .then(r => r.text())
     .then(data => { 
-        if(data.toLowerCase().includes('success')) { 
-            status.innerHTML = "COMPLETED"; status.style.color = "var(--glow-gold)";
-            setTimeout(() => { status.innerHTML = ""; }, 2000); 
-        } else { status.innerHTML = "ERROR"; status.style.color = "orange"; }
+        if(data.trim().toLowerCase().includes('success')) { 
+            if(status) { status.innerHTML = "COMPLETED"; status.style.color = "var(--glow-gold)"; }
+            if(action === 'recalc') setTimeout(() => { location.reload(); }, 1000);
+        } else { if(status) { status.innerHTML = "ERROR"; status.style.color = "orange"; } }
     });
 }
+
+// --- DRAG & DROP FÜR KATEGORIEN ---
+const catContainer = document.getElementById('category-sort-container');
+let draggedCat = null;
+
+catContainer.addEventListener('dragstart', (e) => {
+    if(e.target.classList.contains('cat-wrapper')) {
+        draggedCat = e.target;
+        e.target.classList.add('dragging');
+    }
+});
+
+catContainer.addEventListener('dragend', (e) => {
+    if(!draggedCat) return;
+    draggedCat.classList.remove('dragging');
+    const order = [...catContainer.querySelectorAll('.cat-wrapper')].map(item => item.dataset.id);
+    const fd = new FormData();
+    fd.append('ajax_action', 'sort_cats');
+    order.forEach((id, i) => fd.append('order['+i+']', id));
+    fetch('index.php?p=spike_admin', { method: 'POST', body: fd });
+    draggedCat = null;
+});
+
+catContainer.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const after = getAfter(catContainer, e.clientY, '.cat-wrapper');
+    if(draggedCat) {
+        if(!after) catContainer.appendChild(draggedCat);
+        else catContainer.insertBefore(draggedCat, after);
+    }
+});
+
+// --- NEU: DRAG & DROP FÜR BOARDS ---
+function initBoardSort() {
+    document.querySelectorAll('.board-sort-container').forEach(container => {
+        let draggedBoard = null;
+
+        container.addEventListener('dragstart', (e) => {
+            if(e.target.classList.contains('board-item')) {
+                draggedBoard = e.target;
+                e.target.classList.add('dragging');
+                e.stopPropagation(); // Verhindert, dass die Kategorie mitzieht
+            }
+        });
+
+        container.addEventListener('dragend', (e) => {
+            if(!draggedBoard) return;
+            draggedBoard.classList.remove('dragging');
+            const catId = container.dataset.catid;
+            const order = [...container.querySelectorAll('.board-item')].map(item => item.dataset.id);
+            
+            const fd = new FormData();
+            fd.append('ajax_action', 'sort_boards');
+            fd.append('target_cat_id', catId);
+            order.forEach((id, i) => fd.append('order['+i+']', id));
+            
+            fetch('index.php?p=spike_admin', { method: 'POST', body: fd });
+            draggedBoard = null;
+            e.stopPropagation();
+        });
+
+        container.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const after = getAfter(container, e.clientY, '.board-item');
+            if(draggedBoard) {
+                if(!after) container.appendChild(draggedBoard);
+                else container.insertBefore(draggedBoard, after);
+            }
+            e.stopPropagation();
+        });
+    });
+}
+
+function getAfter(container, y, sel) {
+    const el = [...container.querySelectorAll(sel + ':not(.dragging)')];
+    return el.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if(offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+        else return closest;
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+// Initialisierung starten
+initBoardSort();
 </script>

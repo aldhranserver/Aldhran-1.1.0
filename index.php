@@ -142,9 +142,9 @@ require_once('header.php');
     <?php if (!isset($hide_sidebar) || $hide_sidebar === false) { require_once('sidebar.php'); } ?>
     
     <main class="content-area <?php echo (isset($hide_sidebar) && $hide_sidebar) ? 'full-width' : ''; ?>">
-        <article>
-            <div class="article-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 10px; margin-bottom: 20px;">
-                <h1 class="article-title" style="margin:0;">
+    <article>
+        <div class="article-header">
+            <h1 class="article-title">
                     <?php 
                     if($page_slug === 'um') { echo "User Management"; } 
                     elseif($page_slug === 'admin_log') { echo "Admin Logs"; } 

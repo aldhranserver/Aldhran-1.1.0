@@ -1,7 +1,7 @@
 <?php
 /**
  * SPIKE ADMIN LOGIC - Forum Architect & Security
- * Version: 3.0.0 - SECURITY: PDO Core & Unified Logging
+ * Version: 3.0.1 - FIX: Parameter Handling & Redirects
  */
 if (!defined('IN_CMS')) { exit; }
 
@@ -17,8 +17,24 @@ if ($userPriv < 4) {
 function logAdminAction($type, $details) {
     global $myId;
     $admin_id = $_SESSION['userId'] ?? $myId;
-    // Greift auf die zentrale Funktion in db.php zurück
     aldhran_log($type, $details, $admin_id);
+}
+
+// --- REDIRECT ACTIONS (Müssen VOR dem AJAX-Handler stehen) ---
+if (isset($_GET['del_cat'])) {
+    $id = (int)$_GET['del_cat'];
+    $stmt = $db->prepare("DELETE FROM spike_categories WHERE id = ?");
+    $stmt->execute([$id]);
+    logAdminAction('FORUM_DELETE', "Deleted category ID $id");
+    header("Location: index.php?p=spike_admin"); exit;
+}
+
+if (isset($_GET['del_board'])) {
+    $id = (int)$_GET['del_board'];
+    $stmt = $db->prepare("DELETE FROM spike_boards WHERE id = ?");
+    $stmt->execute([$id]);
+    logAdminAction('FORUM_DELETE', "Deleted board ID $id");
+    header("Location: index.php?p=spike_admin"); exit;
 }
 
 // --- AJAX HANDLER (PDO) ---
@@ -52,17 +68,17 @@ if (isset($_POST['ajax_action'])) {
         echo "success"; exit;
     }
 
-    // Drag & Drop Sortierung (Boards) - MIT KATEGORIE-WECHSEL FIX
+    // Drag & Drop Sortierung (Boards)
     if ($_POST['ajax_action'] === 'sort_boards' && isset($_POST['order'])) {
         $target_cat = (int)$_POST['target_cat_id'];
         $stmt_sort_b = $db->prepare("UPDATE spike_boards SET pos = ?, cat_id = ? WHERE id = ?");
         foreach ($_POST['order'] as $pos => $id) {
             $stmt_sort_b->execute([(int)$pos + 1, $target_cat, (int)$id]);
         }
-        logAdminAction('FORUM_SORT', "Moved boards to cat $target_cat");
         echo "success"; exit;
     }
 
+    // Postcount Recalc
     if ($_POST['ajax_action'] === 'recalc') {
         $db->query("UPDATE users SET forum_posts = 0");
         $db->query("UPDATE users u SET u.forum_posts = (SELECT COUNT(*) FROM spike_posts p WHERE p.author_id = u.id)");
@@ -71,7 +87,7 @@ if (isset($_POST['ajax_action'])) {
     }
 }
 
-// --- REDIRECT ACTIONS (PDO Prepared) ---
+// --- FORM ACTIONS (POST Redirects) ---
 if (isset($_POST['add_cat'])) { 
     $t = trim($_POST['cat_title'] ?? ''); 
     $stmt = $db->prepare("INSERT INTO spike_categories (title, pos, min_priv, min_priv_post) VALUES (?, 99, 0, 1)");
@@ -85,28 +101,6 @@ if (isset($_POST['add_subforum'])) {
     $desc   = trim($_POST['board_desc'] ?? '');
     $stmt = $db->prepare("INSERT INTO spike_boards (cat_id, title, description, pos, min_priv, min_priv_post) VALUES (?, ?, ?, 99, 0, 1)");
     $stmt->execute([$cat_id, $title, $desc]);
-    header("Location: index.php?p=spike_admin"); exit;
-}
-
-if (isset($_POST['update_board_desc'])) {
-    $bid  = (int)$_POST['edit_board_id'];
-    $desc = trim($_POST['new_board_desc'] ?? '');
-    $stmt = $db->prepare("UPDATE spike_boards SET description = ? WHERE id = ?");
-    $stmt->execute([$desc, $bid]);
-    header("Location: index.php?p=spike_admin"); exit;
-}
-
-if (isset($_GET['del_cat'])) {
-    $id = (int)$_GET['del_cat'];
-    $stmt = $db->prepare("DELETE FROM spike_categories WHERE id = ?");
-    $stmt->execute([$id]);
-    header("Location: index.php?p=spike_admin"); exit;
-}
-
-if (isset($_GET['del_board'])) {
-    $id = (int)$_GET['del_board'];
-    $stmt = $db->prepare("DELETE FROM spike_boards WHERE id = ?");
-    $stmt->execute([$id]);
     header("Location: index.php?p=spike_admin"); exit;
 }
 

@@ -30,12 +30,10 @@
             </form>
 
             <?php 
-            // Vorschau-Box: Nutzt jetzt $db (PDO)
             $searchTerm = trim($_GET['q'] ?? '');
             if (!empty($searchTerm) && ($_GET['p'] ?? '') !== 'search'): ?>
                 <div class="search-results-box">
                     <?php
-                    // Suche via PDO Prepared Statement
                     $stmtSearch = $db->prepare("SELECT id, username FROM users WHERE username LIKE ? LIMIT 5");
                     $stmtSearch->execute(['%' . $searchTerm . '%']);
                     $searchResults = $stmtSearch->fetchAll();
@@ -76,28 +74,22 @@
         </ul>
 
         <?php 
-        $canAdmin = false;
         $checkPriv = (int)($_SESSION['priv_level'] ?? 0);
+        $canAdmin = ($checkPriv >= 4);
 
-        // --- ADMIN TOOL LOGIK (PDO) ---
-        if ($checkPriv >= 4) {
-            $canAdmin = true;
-        } elseif ($checkPriv === 3 || $checkPriv === 2) {
+        if (!$canAdmin && ($checkPriv === 3 || $checkPriv === 2)) {
             $stmtPerm = $db->prepare("SELECT can_manage_users FROM staff_permissions WHERE priv_level = ?");
             $stmtPerm->execute([$checkPriv]);
             $rowP = $stmtPerm->fetch();
-            
             if ($rowP && (int)$rowP['can_manage_users'] === 1) {
                 $canAdmin = true;
             }
         }
 
-        if ($canAdmin): 
-        ?>
+        if ($canAdmin): ?>
             <h3 class="admin-section-title"><i class="fas fa-user-shield"></i> Admin Tools</h3>
             <ul>
                 <li><a href="?p=um" class="admin-link"><i class="fas fa-users-gear"></i> User Manager</a></li>
-                
                 <?php if ($checkPriv >= 4): ?>
                     <li><a href="?p=spike_admin" class="admin-link"><i class="fas fa-comments"></i> Forum Architect</a></li>
                     <li><a href="?p=admin_log" class="admin-link"><i class="fas fa-history"></i> Admin Logs</a></li>

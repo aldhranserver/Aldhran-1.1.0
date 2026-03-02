@@ -1,7 +1,7 @@
 <?php
 /**
  * Aldhran Freeshard - Header
- * Version: 2.0.0 - SECURITY: PDO Migration & HTTPS Enforcement
+ * Version: 2.1.5 - BACK TO CORE: Module CSS disabled
  */
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 require_once('includes/db.php');
@@ -20,17 +20,14 @@ if ($fp) {
 // User & Access Check via PDO
 if (isset($_SESSION['user_id'])) {
     $uid = (int)$_SESSION['user_id'];
-    $stmt_u = $db->prepare("SELECT standing, priv_level FROM users WHERE id = ?");
+    $stmt_u = $db->prepare("SELECT username, standing, priv_level FROM users WHERE id = ?");
     $stmt_u->execute([$uid]);
     $u_data = $stmt_u->fetch();
 
     if ($u_data) {
+        $_SESSION['username'] = $u_data['username'];
         $_SESSION['standing'] = (int)$u_data['standing'];
-        if ($_SESSION['standing'] >= 5) {
-            $_SESSION['priv_level'] = 0;
-        } else {
-            $_SESSION['priv_level'] = (int)$u_data['priv_level'];
-        }
+        $_SESSION['priv_level'] = ($_SESSION['standing'] >= 5) ? 0 : (int)$u_data['priv_level'];
     }
 }
 
@@ -43,14 +40,17 @@ if (!isset($data) && $page) {
     $data = $stmt_p->fetch();
 }
 
-// --- DYNAMISCHE META-TAGS (HTTPS & SEO) ---
+// --- DYNAMISCHE META-TAGS (SEO) ---
 $meta_title = h($data['title'] ?? "Aldhran Freeshard - Chronicles of Atlantis");
 $raw_content = $data['content'] ?? "Explore the realms of Atlantis. Join the Aldhran Freeshard today.";
 $meta_desc = mb_substr(trim(preg_replace('/\s+/', ' ', strip_tags($raw_content))), 0, 160) . "...";
 
-// Nutzt die SITE_URL Konstante aus der db.php für korrekte HTTPS-Links
 $current_url = SITE_URL . "/index.php?p=" . h($page);
 $logo_url = SITE_URL . "/assets/img/logo.png";
+
+// --- CSS MODUL FIX ---
+// Wir erzwingen 'main', um Problemen mit dem Backend-Style aus dem Weg zu gehen.
+$target_module = 'main'; 
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -74,7 +74,8 @@ $logo_url = SITE_URL . "/assets/img/logo.png";
     <meta property="twitter:description" content="<?php echo $meta_desc; ?>">
     <meta property="twitter:image" content="<?php echo $logo_url; ?>">
 
-    <link rel="stylesheet" href="assets/style.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="style.php?module=<?php echo htmlspecialchars($target_module); ?>&v=<?php echo time(); ?>">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
 </head>
@@ -104,7 +105,10 @@ $logo_url = SITE_URL . "/assets/img/logo.png";
         </div>
         <div class="user-status">
             <?php if (isset($_SESSION['user_id'])): ?>
-                <strong class="user-status-name"><?php echo h($_SESSION['username'] ?? 'User'); ?></strong>
+                <span style="color: #c5a059; margin-right: 15px;">
+                    <i class="fas fa-user-shield" style="font-size: 0.8em;"></i> 
+                    <strong><?php echo htmlspecialchars($_SESSION['username'] ?? 'User'); ?></strong>
+                </span>
                 <a href="?p=logout" class="header-auth-link">Logout</a>
             <?php else: ?>
                 <a href="?p=login" class="header-auth-link">Login</a>
