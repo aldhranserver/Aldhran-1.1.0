@@ -77,13 +77,6 @@ $statusText = ($is_online_live) ? 'ONLINE' : 'OFFLINE';
             <div class="stat-item"><span class="stat-label">Realm Points</span><span class="stat-value"><?php echo htmlspecialchars($srv['rp_rate'] ?? '1x'); ?></span></div>
         </div>
         <div class="description"><?php echo !empty($srv['server_description']) ? htmlspecialchars($srv['server_description']) : "<i>The administrator has not provided a description yet.</i>"; ?></div>
-        <div class="connect-box">
-            <?php if ($is_online_live): ?>
-                <button onclick="initConnect()" class="btn-connect"><i class="fas fa-bolt"></i> LAUNCH VIA PORTAL</button>
-            <?php else: ?>
-                <button disabled style="opacity: 0.2; cursor: not-allowed;" class="btn-connect">SERVER CURRENTLY OFFLINE</button>
-            <?php endif; ?>
-        </div>
     </div>
     <footer>&copy; <?php echo date("Y"); ?> Aldhran - DAoC Portal Nostalgic Revival</footer>
     <script>

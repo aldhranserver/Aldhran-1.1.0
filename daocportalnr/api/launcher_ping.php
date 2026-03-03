@@ -1,26 +1,25 @@
 <?php
 /**
- * DAoC Portal NR - Launcher Handshake API
- * Location: htdocs/daocportalnr/api/launcher_ping.php
+ * HARDCORE DEBUG - DAoC Portal NR
  */
+require_once('../../includes/db.php'); 
 
-// Dieselbe Session-Konfiguration wie in der index.php
-if (session_status() === PHP_SESSION_NONE) { 
-    session_set_cookie_params(0, '/'); 
-    session_start(); 
-}
+$logFile = 'debug_ping_log.txt';
+$ip = $_SERVER['REMOTE_ADDR'];
+$time = date('Y-m-d H:i:s');
+$input = file_get_contents('php://input');
 
-header('Content-Type: application/json');
+// JEDEN Request protokollieren
+file_put_contents($logFile, "[$time] IP: $ip | Method: " . $_SERVER['REQUEST_METHOD'] . " | Data: $input" . PHP_EOL, FILE_APPEND);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['launcher_active']) && $_POST['launcher_active'] == '1') {
-        
-        $_SESSION['launcher_present'] = true;
-        $_SESSION['last_ping_time'] = time();
-        
-        echo json_encode(["status" => "success", "msg" => "Launcher recognized"]);
+    $active = $_POST['launcher_active'] ?? '0';
+    if ($active == '1') {
+        $stmt = $db->prepare("REPLACE INTO launcher_ips (ip_address, last_ping, is_active) VALUES (?, NOW(), 1)");
+        $status = $stmt->execute([$ip]);
+        file_put_contents($logFile, "[$time] DB-Update Erfolg: " . ($status ? 'JA' : 'NEIN') . PHP_EOL, FILE_APPEND);
+        echo json_encode(["status" => "success"]);
         exit;
     }
 }
-
-echo json_encode(["status" => "error", "msg" => "Invalid request"]);
+echo json_encode(["status" => "error", "msg" => "No POST or active=0"]);
