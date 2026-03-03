@@ -78,7 +78,7 @@ $statusText = ($is_online_live) ? 'ONLINE' : 'OFFLINE';
         </div>
         <div class="description"><?php echo !empty($srv['server_description']) ? htmlspecialchars($srv['server_description']) : "<i>The administrator has not provided a description yet.</i>"; ?></div>
     </div>
-    <footer>&copy; <?php echo date("Y"); ?> Aldhran - DAoC Portal Nostalgic Revival</footer>
+    <footer>&copy; <?php echo date("Y"); ?> 2026 DAOC PORTAL NR 1.0</footer>
     <script>
     function initConnect() {
         let user = prompt("Enter your Shard Username:");

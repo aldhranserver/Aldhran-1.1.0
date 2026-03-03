@@ -1,7 +1,7 @@
 <?php
 /**
  * DAoC Portal NR - Add Shard (With Rules & Anti-Spam)
- * Version: 1.3.1 - Integrated Shard Management Fields (English Description)
+ * Version: 1.3.2 - Auto ZIP Hash on Registration
  */
 require_once('../includes/db.php');
 if (session_status() === PHP_SESSION_NONE) { 
@@ -24,10 +24,21 @@ if (isset($_POST['add_shard'])) {
     $desc    = trim($_POST['s_desc']);
     $url     = trim($_POST['s_url']);
     $uid     = $_SESSION['portal_user_id'];
-    
-    // NEU: Shard Management Felder
     $s_short = trim($_POST['s_shard_name']);
     $s_zip   = trim($_POST['s_zip_url']);
+
+    // ZIP-Hash vom Remote-Server berechnen
+    $zip_hash = '';
+    if (!empty($s_zip)) {
+        $zip_data = @file_get_contents($s_zip);
+        if ($zip_data !== false) {
+            $zip_hash = md5($zip_data);
+        } else {
+            // ZIP nicht erreichbar – trotzdem speichern, Hash bleibt leer
+            // Der Launcher lädt dann beim ersten Start immer herunter
+            $zip_hash = '';
+        }
+    }
 
     $check = $db->prepare("SELECT id FROM daoc_servers WHERE server_ip = ? AND server_port = ?");
     $check->execute([$ip, $port]);
@@ -35,9 +46,10 @@ if (isset($_POST['add_shard'])) {
     if ($check->rowCount() > 0) {
         $error = "This server address is already registered in the portal.";
     } else {
-        // SQL erweitert um shard_name und client_zip_url
-        $stmt = $db->prepare("INSERT INTO daoc_servers (server_name, server_ip, server_port, server_description, website_url, owner_id, is_active, shard_name, client_zip_url) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)");
-        if ($stmt->execute([$name, $ip, $port, $desc, $url, $uid, $s_short, $s_zip])) {
+        $stmt = $db->prepare("INSERT INTO daoc_servers 
+            (server_name, server_ip, server_port, server_description, website_url, owner_id, is_active, shard_name, client_zip_url, client_zip_hash) 
+            VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?)");
+        if ($stmt->execute([$name, $ip, $port, $desc, $url, $uid, $s_short, $s_zip, $zip_hash])) {
             $msg = "Shard successfully submitted! It will be live after a brief review.";
         } else {
             $error = "Error saving data. Please check your inputs.";
@@ -125,7 +137,9 @@ if (isset($_POST['add_shard'])) {
 
                 <label>Client ZIP URL (Required for Auto-Download)</label>
                 <div class="field-info">
-                    Direct link to a .zip containing your <b>game.dll</b>. The Launcher will automatically download and extract it.
+                    Direct link to a .zip containing your <b>game.dll</b>. The Launcher will automatically 
+                    download and extract it. When you <b>replace the ZIP</b>, update the hash via the 
+                    Shard Manager so players receive the new version automatically.
                 </div>
                 <input type="url" name="s_zip_url" placeholder="https://your-server.com/client.zip" required>
 

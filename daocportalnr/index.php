@@ -1,7 +1,7 @@
 <?php
 /**
  * DAoC Portal NR - Server Status Page
- * Version: 2.1.2 - Fixed Ghost Online Status & Timeout
+ * Version: 2.1.3 - ZIP Hash Change Detection
  */
 require_once('../includes/db.php'); 
 if (session_status() === PHP_SESSION_NONE) { 
@@ -19,15 +19,11 @@ if ($check->fetch()) { $launcher_ready = true; }
  * Optimierter Server-Check
  */
 function checkServer($ip, $port) {
-    // Verhindert, dass lokale Test-IPs (127.x.x.x) fälschlicherweise als Online 
-    // angezeigt werden, nur weil der Webserver auf sich selbst antwortet.
     if (strpos($ip, '127.') === 0 || $ip === 'localhost') {
         return false; 
     }
-
     $errno = 0;
     $errstr = "";
-    // Timeout auf 0.3s erhöht für stabilere Abfragen bei echten Remote-Servern
     $fp = @fsockopen($ip, $port, $errno, $errstr, 0.3); 
     if ($fp) { 
         fclose($fp); 
@@ -150,7 +146,8 @@ $is_logged_in = isset($_SESSION['portal_user_id']);
                         '<?php echo $srv['server_port']; ?>',
                         '<?php echo htmlspecialchars($srv['client_version'] ?? '1.109'); ?>',
                         '<?php echo htmlspecialchars($srv['shard_name'] ?? 'Aldhran'); ?>',
-                        '<?php echo htmlspecialchars($srv['client_zip_url'] ?? ''); ?>'
+                        '<?php echo htmlspecialchars($srv['client_zip_url'] ?? ''); ?>',
+                        '<?php echo htmlspecialchars($srv['client_zip_hash'] ?? ''); ?>'
                        )" 
                        class="btn-nexus btn-connect">CONNECT</a>
                 <?php else: ?>
@@ -168,14 +165,16 @@ $is_logged_in = isset($_SESSION['portal_user_id']);
 </div>
 
 <script>
-function launch(ip, port, version, shardName, clientZipUrl) {
+// URI-Format: daocnr://IP:PORT/VERSION/SHARDNAME/CLIENTZIPURL/ZIPCHECKSUM/ACCOUNT/PASSWORD
+function launch(ip, port, version, shardName, clientZipUrl, zipHash) {
     const user = document.getElementById('acc_name').value;
     const pass = document.getElementById('acc_pass').value;
     if (!user || !pass) { alert("Bitte Account und Passwort eingeben."); return; }
     const uri = "daocnr://" + ip + ":" + port + 
                 "/" + encodeURIComponent(version) + 
                 "/" + encodeURIComponent(shardName) + 
-                "/" + encodeURIComponent(clientZipUrl) + 
+                "/" + encodeURIComponent(clientZipUrl) +
+                "/" + encodeURIComponent(zipHash) +
                 "/" + encodeURIComponent(user) + 
                 "/" + encodeURIComponent(pass);
     window.location.href = uri;
