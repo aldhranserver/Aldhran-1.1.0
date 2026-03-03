@@ -163,7 +163,7 @@ $is_logged_in = isset($_SESSION['portal_user_id']);
 </div>
 
 <div class="nrfooter">
-    &copy; <?php echo date("Y"); ?> NOSTALGIC REVIVAL - DAOC PORTAL NR EDITION<br>
+    &copy; <?php echo date("Y"); ?> DAOC PORTAL NR 1.0<br>
     <span style="font-size: 8px; color: #222; margin-top: 5px; display: block;">Authorized Access Only</span>
 </div>
 

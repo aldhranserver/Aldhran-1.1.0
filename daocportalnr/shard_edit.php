@@ -26,14 +26,21 @@ if (isset($_POST['update_shard'])) {
     $url     = trim($_POST['s_url']);
     $s_short = trim($_POST['s_shard_name']);
     $s_zip   = trim($_POST['s_zip_url']);
+    $s_ver   = trim($_POST['s_version']); // NEU: Client Version
 
-    $update = $db->prepare("UPDATE daoc_servers SET server_name = ?, server_ip = ?, server_port = ?, server_description = ?, website_url = ?, shard_name = ?, client_zip_url = ? WHERE id = ? AND owner_id = ?");
-    if ($update->execute([$name, $ip, $port, $desc, $url, $s_short, $s_zip, $sid, $uid])) {
+    // Update Query inkl. client_version
+    $update = $db->prepare("UPDATE daoc_servers SET server_name = ?, server_ip = ?, server_port = ?, server_description = ?, website_url = ?, shard_name = ?, client_zip_url = ?, client_version = ? WHERE id = ? AND owner_id = ?");
+    if ($update->execute([$name, $ip, $port, $desc, $url, $s_short, $s_zip, $s_ver, $sid, $uid])) {
         $msg = "Shard updated successfully!";
-        // Daten für Anzeige aktualisieren
-        $shard['server_name'] = $name; $shard['server_ip'] = $ip; $shard['server_port'] = $port;
-        $shard['server_description'] = $desc; $shard['website_url'] = $url;
-        $shard['shard_name'] = $s_short; $shard['client_zip_url'] = $s_zip;
+        // Lokale Daten für die Anzeige im Formular aktualisieren
+        $shard['server_name'] = $name; 
+        $shard['server_ip'] = $ip; 
+        $shard['server_port'] = $port;
+        $shard['server_description'] = $desc; 
+        $shard['website_url'] = $url;
+        $shard['shard_name'] = $s_short; 
+        $shard['client_zip_url'] = $s_zip;
+        $shard['client_version'] = $s_ver; // NEU
     }
 }
 ?>
@@ -77,6 +84,10 @@ if (isset($_POST['update_shard'])) {
             <label>Client ZIP URL</label>
             <input type="url" name="s_zip_url" value="<?php echo htmlspecialchars($shard['client_zip_url'] ?? ''); ?>" required>
             <div class="field-info">Must be a direct link to a ZIP containing the game.dll.</div>
+
+            <label>Required Client Version</label>
+            <input type="text" name="s_version" value="<?php echo htmlspecialchars($shard['client_version'] ?? '1.109'); ?>" placeholder="e.g. 1.109" required>
+            <div class="field-info">The version string used by the Launcher to verify the local files.</div>
 
             <label>Website URL (Optional)</label>
             <input type="url" name="s_url" value="<?php echo htmlspecialchars($shard['website_url'] ?? ''); ?>">
