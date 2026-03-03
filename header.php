@@ -104,6 +104,10 @@ $target_module = 'main';
              </div>
         </div>
         <div class="user-status">
+			<a href="daocportalnr/index.php" class="portal-link" style="color: #c5a059; text-decoration: none; font-size: 1.1em; display: flex; align-items: center; gap: 7px; border: 1px solid rgba(197, 160, 89, 0.3); padding: 4px 10px; border-radius: 2px; transition: 0.3s;">
+                    <i class="fas fa-crosshairs"></i>
+                    <span style="font-size: 0.7em; letter-spacing: 1px; font-family: 'Cinzel', serif; font-weight: bold;">PORTAL NR</span>
+                 </a>
             <?php if (isset($_SESSION['user_id'])): ?>
                 <span style="color: #c5a059; margin-right: 15px;">
                     <i class="fas fa-user-shield" style="font-size: 0.8em;"></i> 

@@ -230,3 +230,61 @@
 [2026-03-03 09:46:11] DB-Update Erfolg: JA
 [2026-03-03 09:46:24] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
 [2026-03-03 09:46:24] DB-Update Erfolg: JA
+[2026-03-03 09:58:08] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 09:58:08] DB-Update Erfolg: JA
+[2026-03-03 09:59:03] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 09:59:03] DB-Update Erfolg: JA
+[2026-03-03 10:06:15] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 10:06:15] DB-Update Erfolg: JA
+[2026-03-03 10:06:22] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 10:06:22] DB-Update Erfolg: JA
+[2026-03-03 10:06:56] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 10:06:56] DB-Update Erfolg: JA
+[2026-03-03 10:09:40] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 10:09:40] DB-Update Erfolg: JA
+[2026-03-03 10:09:46] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 10:09:46] DB-Update Erfolg: JA
+[2026-03-03 10:12:50] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 10:12:50] DB-Update Erfolg: JA
+[2026-03-03 10:12:55] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 10:12:55] DB-Update Erfolg: JA
+[2026-03-03 10:15:25] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 10:15:25] DB-Update Erfolg: JA
+[2026-03-03 10:15:43] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 10:15:43] DB-Update Erfolg: JA
+[2026-03-03 10:21:34] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 10:21:34] DB-Update Erfolg: JA
+[2026-03-03 10:21:46] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 10:21:46] DB-Update Erfolg: JA
+[2026-03-03 10:40:52] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 10:40:52] DB-Update Erfolg: JA
+[2026-03-03 10:40:59] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 10:40:59] DB-Update Erfolg: JA
+[2026-03-03 11:16:33] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 11:16:33] DB-Update Erfolg: JA
+[2026-03-03 11:16:41] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 11:16:41] DB-Update Erfolg: JA
+[2026-03-03 11:18:33] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 11:18:33] DB-Update Erfolg: JA
+[2026-03-03 11:21:54] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 11:21:54] DB-Update Erfolg: JA
+[2026-03-03 11:22:17] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 11:22:17] DB-Update Erfolg: JA
+[2026-03-03 11:28:49] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 11:28:49] DB-Update Erfolg: JA
+[2026-03-03 11:28:57] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 11:28:57] DB-Update Erfolg: JA
+[2026-03-03 11:29:25] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 11:29:25] DB-Update Erfolg: JA
+[2026-03-03 11:32:20] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 11:32:20] DB-Update Erfolg: JA
+[2026-03-03 11:32:36] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 11:32:36] DB-Update Erfolg: JA
+[2026-03-03 12:00:39] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 12:00:39] DB-Update Erfolg: JA
+[2026-03-03 12:00:50] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 12:00:50] DB-Update Erfolg: JA
+[2026-03-03 13:03:04] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 13:03:04] DB-Update Erfolg: JA
+[2026-03-03 13:03:28] IP: 176.0.70.57 | Method: POST | Data: launcher_active=1
+[2026-03-03 13:03:28] DB-Update Erfolg: JA

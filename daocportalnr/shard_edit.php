@@ -1,7 +1,7 @@
 <?php
 /**
  * DAoC Portal NR - Edit Shard
- * Version: 1.1.0 - Added Description and URL fields
+ * Version: 1.2.0 - Multi-Shard Launcher Support
  */
 require_once('../includes/db.php');
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
@@ -19,20 +19,21 @@ $shard = $stmt->fetch();
 if (!$shard) { die("Access Denied: Shard not found or ownership mismatch."); }
 
 if (isset($_POST['update_shard'])) {
-    $name = trim($_POST['s_name']);
-    $ip   = trim($_POST['s_ip']);
-    $port = (int)$_POST['s_port'];
-    $desc = trim($_POST['s_desc']);
-    $url  = trim($_POST['s_url']);
+    $name    = trim($_POST['s_name']);
+    $ip      = trim($_POST['s_ip']);
+    $port    = (int)$_POST['s_port'];
+    $desc    = trim($_POST['s_desc']);
+    $url     = trim($_POST['s_url']);
+    $s_short = trim($_POST['s_shard_name']);
+    $s_zip   = trim($_POST['s_zip_url']);
 
-    $update = $db->prepare("UPDATE daoc_servers SET server_name = ?, server_ip = ?, server_port = ?, server_description = ?, website_url = ? WHERE id = ? AND owner_id = ?");
-    if ($update->execute([$name, $ip, $port, $desc, $url, $sid, $uid])) {
+    $update = $db->prepare("UPDATE daoc_servers SET server_name = ?, server_ip = ?, server_port = ?, server_description = ?, website_url = ?, shard_name = ?, client_zip_url = ? WHERE id = ? AND owner_id = ?");
+    if ($update->execute([$name, $ip, $port, $desc, $url, $s_short, $s_zip, $sid, $uid])) {
         $msg = "Shard updated successfully!";
-        $shard['server_name'] = $name;
-        $shard['server_ip'] = $ip;
-        $shard['server_port'] = $port;
-        $shard['server_description'] = $desc;
-        $shard['website_url'] = $url;
+        // Daten für Anzeige aktualisieren
+        $shard['server_name'] = $name; $shard['server_ip'] = $ip; $shard['server_port'] = $port;
+        $shard['server_description'] = $desc; $shard['website_url'] = $url;
+        $shard['shard_name'] = $s_short; $shard['client_zip_url'] = $s_zip;
     }
 }
 ?>
@@ -52,6 +53,7 @@ if (isset($_POST['update_shard'])) {
         .btn-active { width: 100%; padding: 15px; background: transparent; border: 1px solid #c5a059; color: #c5a059; cursor: pointer; font-family: 'Cinzel'; font-weight: bold; }
         .btn-active:hover { background: #c5a059; color: #000; }
         .msg { color: #00ff00; text-align: center; margin-bottom: 15px; font-size: 14px; }
+        .field-info { font-size: 9px; color: #444; margin-top: -12px; margin-bottom: 15px; font-style: italic; }
     </style>
 </head>
 <body>
@@ -59,20 +61,28 @@ if (isset($_POST['update_shard'])) {
         <h2>Edit Shard</h2>
         <?php if($msg): ?><div class="msg"><?php echo $msg; ?></div><?php endif; ?>
         <form method="POST">
-            <label>Shard Name</label>
+            <label>Shard Name (Public)</label>
             <input type="text" name="s_name" value="<?php echo htmlspecialchars($shard['server_name']); ?>" required>
             
+            <label>Shard Identifier (Technical Name / Folder)</label>
+            <input type="text" name="s_shard_name" value="<?php echo htmlspecialchars($shard['shard_name'] ?? ''); ?>" required pattern="[a-zA-Z0-9_-]+" oninput="this.value = this.value.replace(/[^a-zA-Z0-9_-]/g, '')">
+            <div class="field-info">Single word, no spaces. Determines the local folder name.</div>
+
             <label>IP / Hostname</label>
             <input type="text" name="s_ip" value="<?php echo htmlspecialchars($shard['server_ip']); ?>" required>
             
             <label>Port</label>
             <input type="number" name="s_port" value="<?php echo (int)$shard['server_port']; ?>" required>
 
-            <label>Website URL (Optional)</label>
-            <input type="url" name="s_url" value="<?php echo htmlspecialchars($shard['website_url'] ?? ''); ?>" placeholder="https://yourshard.com">
+            <label>Client ZIP URL</label>
+            <input type="url" name="s_zip_url" value="<?php echo htmlspecialchars($shard['client_zip_url'] ?? ''); ?>" required>
+            <div class="field-info">Must be a direct link to a ZIP containing the game.dll.</div>
 
-            <label>Server Description (Plain Text)</label>
-            <textarea name="s_desc" rows="6" placeholder="Tell players about your world..."><?php echo htmlspecialchars($shard['server_description'] ?? ''); ?></textarea>
+            <label>Website URL (Optional)</label>
+            <input type="url" name="s_url" value="<?php echo htmlspecialchars($shard['website_url'] ?? ''); ?>">
+
+            <label>Server Description</label>
+            <textarea name="s_desc" rows="5"><?php echo htmlspecialchars($shard['server_description'] ?? ''); ?></textarea>
 
             <button type="submit" name="update_shard" class="btn-active">SAVE CHANGES</button>
         </form>

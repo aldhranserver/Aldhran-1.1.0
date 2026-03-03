@@ -1,7 +1,7 @@
 <?php
 /**
  * DAoC Portal NR - Add Shard (With Rules & Anti-Spam)
- * Version: 1.2.2 - Custom T&C Integration
+ * Version: 1.3.1 - Integrated Shard Management Fields (English Description)
  */
 require_once('../includes/db.php');
 if (session_status() === PHP_SESSION_NONE) { 
@@ -18,12 +18,16 @@ $msg = "";
 $error = "";
 
 if (isset($_POST['add_shard'])) {
-    $name = trim($_POST['s_name']);
-    $ip   = trim($_POST['s_ip']);
-    $port = (int)$_POST['s_port'];
-    $desc = trim($_POST['s_desc']);
-    $url  = trim($_POST['s_url']);
-    $uid  = $_SESSION['portal_user_id'];
+    $name    = trim($_POST['s_name']);
+    $ip      = trim($_POST['s_ip']);
+    $port    = (int)$_POST['s_port'];
+    $desc    = trim($_POST['s_desc']);
+    $url     = trim($_POST['s_url']);
+    $uid     = $_SESSION['portal_user_id'];
+    
+    // NEU: Shard Management Felder
+    $s_short = trim($_POST['s_shard_name']);
+    $s_zip   = trim($_POST['s_zip_url']);
 
     $check = $db->prepare("SELECT id FROM daoc_servers WHERE server_ip = ? AND server_port = ?");
     $check->execute([$ip, $port]);
@@ -31,8 +35,9 @@ if (isset($_POST['add_shard'])) {
     if ($check->rowCount() > 0) {
         $error = "This server address is already registered in the portal.";
     } else {
-        $stmt = $db->prepare("INSERT INTO daoc_servers (server_name, server_ip, server_port, server_description, website_url, owner_id, is_active) VALUES (?, ?, ?, ?, ?, ?, 0)");
-        if ($stmt->execute([$name, $ip, $port, $desc, $url, $uid])) {
+        // SQL erweitert um shard_name und client_zip_url
+        $stmt = $db->prepare("INSERT INTO daoc_servers (server_name, server_ip, server_port, server_description, website_url, owner_id, is_active, shard_name, client_zip_url) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)");
+        if ($stmt->execute([$name, $ip, $port, $desc, $url, $uid, $s_short, $s_zip])) {
             $msg = "Shard successfully submitted! It will be live after a brief review.";
         } else {
             $error = "Error saving data. Please check your inputs.";
@@ -68,6 +73,7 @@ if (isset($_POST['add_shard'])) {
         .success { color: #00ff00; border: 1px solid #004400; background: rgba(0,255,0,0.05); }
         
         #form-container { display: none; margin-top: 30px; border-top: 1px solid #222; padding-top: 30px; }
+        .field-info { font-size: 11px; color: #666; margin-bottom: 8px; font-style: italic; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -83,7 +89,10 @@ if (isset($_POST['add_shard'])) {
                 1. The <b>DAoC Portal NR Division</b> validates every entry before public release.<br>
                 2. We generally approve all servers to allow every dev to showcase their project.<br>
                 3. Shards with massive negative behavior (DOL Community etc.) will be warned, suspended, or deleted.<br>
-                4. Final goal is a moderation staff consisting of <b>DOL Team Members</b> to remain unbiased. Until then, Aldhran staff will moderate.
+				4. Please ensure your entry remains up-to-date to allow your players to log in without issues.<br>
+                5. Your players <u>require</u> the DAoC Portal NR Launcher to connect. It is a standalone application and can be placed anywhere on the player's system.<br>
+                6. If you add additional servers while already having active listings, our team may perform a manual review to prevent spam.<br>
+                7. DAoC Portal NR is regularly updated but is <b>no longer compatible</b> with the old DAoC Portal software
             </div>
             <button id="timer-btn" class="btn-active" disabled>
                 PLEASE READ... (60s)
@@ -92,14 +101,33 @@ if (isset($_POST['add_shard'])) {
 
         <div id="form-container">
             <form method="POST">
-                <label>Shard Name</label>
+                <label>Shard Name (Public Display)</label>
                 <input type="text" name="s_name" placeholder="e.g. Avalon Revival" required>
+
+                <label>Shard Identifier (Technical Name)</label>
+                <div class="field-info">
+                    This unique ID creates a dedicated local folder on the player's PC (e.g., <b>\clients\Aldhran\</b>). 
+                    Use a single word, <b>no spaces or special characters</b> allowed.
+                </div>
+                <input type="text" 
+                       name="s_shard_name" 
+                       placeholder="e.g. Aldhran" 
+                       required 
+                       pattern="[a-zA-Z0-9_-]+" 
+                       oninput="this.value = this.value.replace(/[^a-zA-Z0-9_-]/g, '')"
+                       title="Only letters, numbers, underscores, and hyphens. No spaces.">
                 
                 <label>IP / Hostname</label>
                 <input type="text" name="s_ip" placeholder="login.your-server.com" required>
                 
                 <label>Port</label>
                 <input type="number" name="s_port" value="10300" required>
+
+                <label>Client ZIP URL (Required for Auto-Download)</label>
+                <div class="field-info">
+                    Direct link to a .zip containing your <b>game.dll</b>. The Launcher will automatically download and extract it.
+                </div>
+                <input type="url" name="s_zip_url" placeholder="https://your-server.com/client.zip" required>
 
                 <label>Website URL (Optional)</label>
                 <input type="url" name="s_url" placeholder="https://www.your-shard.com">
@@ -117,7 +145,7 @@ if (isset($_POST['add_shard'])) {
     </div>
 
     <script>
-        let timeLeft = 60;
+        let timeLeft = 60; 
         const btn = document.getElementById('timer-btn');
         const rules = document.getElementById('rules-section');
         const form = document.getElementById('form-container');

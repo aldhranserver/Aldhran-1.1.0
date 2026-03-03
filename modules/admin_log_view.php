@@ -36,7 +36,7 @@ $logs = $stmt_logs->fetchAll();
 
 <div class="admin-container">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="font-family:'Cinzel'; color:var(--gold); margin:0;">Enterprise Audit Logs</h2>
+        <h2 style="font-family:'Cinzel'; color:var(--gold); margin:0;">Audit Logs</h2>
         <span style="font-size: 10px; color: #444; letter-spacing: 2px;">V2.0 STABLE</span>
     </div>
 
