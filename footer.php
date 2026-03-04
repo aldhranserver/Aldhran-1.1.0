@@ -11,7 +11,7 @@
             <p>
                 &copy; 2026 Aldhran Server
             </p>
-			<p>V1.1.2
+			<p>V1.1.3
 			</p>
         </div>
     </div>

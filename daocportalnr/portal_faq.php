@@ -71,8 +71,7 @@ $is_logged_in = isset($_SESSION['portal_user_id']);
             <span class="faq-question">Where are the received files from Freeshards stored?</span>
             <div class="faq-answer">
                 To prevent permission conflicts and "mixed" settings, Portal NR uses dedicated directories under:<br>
-                <code style="color:#c5a059">Documents\Electronic Arts\Dark Age of Camelot\PortalNR\[ShardName]\</code><br>
-                This is where your <span class="highlight">user.dat</span>, screenshots, and logs are kept, safely separated for each server.
+                <code style="color:#c5a059">C:\PortalNR\[ShardName]\</code><br>
             </div>
         </div>
 
@@ -94,7 +93,7 @@ $is_logged_in = isset($_SESSION['portal_user_id']);
 </div>
 
 <div class="nrfooter">
-    &copy; <?php echo date("Y"); ?> ORTAL NOSTALGIC REVIVAL 1.0<br>
+    &copy; <?php echo date("Y"); ?> PORTAL NOSTALGIC REVIVAL 1.0<br>
 </div>
 
 </body>

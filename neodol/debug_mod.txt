@@ -1,0 +1,87 @@
+[2026-02-26 16:37:40] Aktion: delete_thread | Thread: 2 | Board: 1
+[2026-02-26 16:37:40] Erfolg: Thread 2 gelöscht. Redirect zu viewboard&id=1
+[2026-02-26 16:40:01] Aktion: toggle_lock | Thread: 1 | Board: 1
+[2026-02-26 16:40:01] Erfolg: Aktion toggle_lock. Redirect zurück zu Thread 1
+[2026-02-26 16:40:05] Aktion: toggle_lock | Thread: 1 | Board: 1
+[2026-02-26 16:40:05] Erfolg: Aktion toggle_lock. Redirect zurück zu Thread 1
+[2026-02-26 16:40:11] Aktion: delete_thread | Thread: 1 | Board: 1
+[2026-02-26 16:40:11] Erfolg: Thread 1 gelöscht. Redirect zu viewboard&id=1
+[2026-02-26 17:01:34] Aktion: delete_thread | Thread: 3 | Board: 1
+[2026-02-26 17:01:34] Erfolg: Thread 3 gelöscht. Redirect zu viewboard&id=1
+[2026-02-26 17:07:45] Aktion: delete_thread | Thread: 4 | Board: 1 | Post: 0
+[2026-02-26 17:07:45] Erfolg: Thread 4 gelöscht. Redirect zu viewboard&id=1
+[2026-02-26 17:42:59] Aktion: delete_thread | Thread: 6 | Board: 1 | Post: 0
+[2026-02-26 17:42:59] Erfolg: Thread 6 gelöscht. Redirect zu viewboard&id=1
+[2026-02-26 18:55:58] Aktion: delete_thread | Thread: 5 | Board: 1 | Post: 0
+[2026-02-26 18:55:58] Erfolg: Thread 5 gelöscht. Redirect zu viewboard&id=1
+[2026-02-26 18:56:09] Aktion: delete_thread | Thread: 7 | Board: 2 | Post: 0
+[2026-02-26 18:56:09] Erfolg: Thread 7 gelöscht. Redirect zu viewboard&id=2
+[2026-02-26 19:08:11] Aktion: delete_thread | Thread: 8 | Board: 1 | Post: 0
+[2026-02-26 19:08:11] Erfolg: Thread 8 gelöscht. Redirect zu viewboard&id=1
+[2026-02-26 20:57:27] Aktion: delete_post | Thread: 0 | Board: 0 | Post: 11
+[2026-02-26 20:57:27] Erfolg: Post 11 gelöscht.
+[2026-02-26 20:57:27] Erfolg: Aktion delete_post. Redirect zurück zu Thread 0
+[2026-02-26 21:04:43] Aktion: delete_post | Thread: 0 | Board: 0 | Post: 12
+[2026-02-26 21:04:43] Erfolg: Post 12 gelöscht.
+[2026-02-26 21:04:43] Erfolg: Aktion delete_post. Redirect zurück zu Thread 0
+[2026-02-26 21:09:53] Aktion: delete_post | Thread: 0 | Board: 0 | Post: 13
+[2026-02-26 21:09:53] Erfolg: Post 13 gelöscht.
+[2026-02-26 21:09:53] Erfolg: Aktion delete_post. Redirect zurück zu Thread 0
+[2026-02-26 22:18:36] Aktion: toggle_lock | Thread: 9 | Board: 1 | Post: 0
+[2026-02-26 22:18:36] Erfolg: Aktion toggle_lock. Redirect zurück zu Thread 9
+[2026-02-26 22:18:42] Aktion: toggle_sticky | Thread: 9 | Board: 1 | Post: 0
+[2026-02-26 22:18:42] Erfolg: Aktion toggle_sticky. Redirect zurück zu Thread 9
+[2026-02-26 23:07:06] Aktion: toggle_lock | Thread: 11 | Board: 16 | Post: 0
+[2026-02-26 23:07:06] Erfolg: Aktion toggle_lock. Redirect zurück zu Thread 11
+[2026-02-26 23:07:09] Aktion: toggle_lock | Thread: 11 | Board: 16 | Post: 0
+[2026-02-26 23:07:09] Erfolg: Aktion toggle_lock. Redirect zurück zu Thread 11
+[2026-02-26 23:29:26] Aktion: delete_thread | Thread: 10 | Board: 5 | Post: 0
+[2026-02-26 23:29:26] Erfolg: Thread 10 gelöscht. Redirect zu viewboard&id=5
+[2026-02-27 09:32:14] Aktion: toggle_lock | Thread: 9 | Board: 1 | Post: 0
+[2026-02-27 09:32:14] Erfolg: Aktion toggle_lock. Redirect zurück zu Thread 9
+[2026-02-27 09:32:24] Aktion: toggle_lock | Thread: 9 | Board: 1 | Post: 0
+[2026-02-27 09:32:24] Erfolg: Aktion toggle_lock. Redirect zurück zu Thread 9
+[2026-02-27 09:35:04] Aktion: delete_thread | Thread: 13 | Board: 7 | Post: 0
+[2026-02-27 09:35:04] Erfolg: Thread 13 gelöscht. Redirect zu viewboard&id=7
+[2026-02-27 09:35:19] Aktion: delete_thread | Thread: 12 | Board: 1 | Post: 0
+[2026-02-27 09:35:19] Erfolg: Thread 12 gelöscht. Redirect zu viewboard&id=1
+[2026-02-27 09:58:57] Aktion: delete_thread | Thread: 15 | Board: 16 | Post: 0
+[2026-02-27 09:58:57] Erfolg: Thread 15 gelöscht. Redirect zu viewboard&id=16
+[2026-02-27 10:18:55] Aktion: toggle_lock | Thread: 16 | Board: 16 | Post: 0
+[2026-02-27 10:18:55] Erfolg: Aktion toggle_lock. Redirect zurück zu Thread 16
+[2026-02-27 10:19:00] Aktion: toggle_lock | Thread: 16 | Board: 16 | Post: 0
+[2026-02-27 10:19:00] Erfolg: Aktion toggle_lock. Redirect zurück zu Thread 16
+[2026-02-27 10:44:00] Aktion: toggle_lock | Thread: 16 | Board: 16 | Post: 0
+[2026-02-27 10:44:00] Erfolg: Aktion toggle_lock. Redirect zurück zu Thread 16
+[2026-02-27 10:44:02] Aktion: toggle_lock | Thread: 16 | Board: 16 | Post: 0
+[2026-02-27 10:44:02] Erfolg: Aktion toggle_lock. Redirect zurück zu Thread 16
+[2026-02-27 13:04:13] Aktion: toggle_lock | Thread: 9 | Board: 1 | Post: 0
+[2026-02-27 13:04:13] Erfolg: Aktion toggle_lock. Redirect zurück zu Thread 9
+[2026-02-27 13:10:47] Aktion: toggle_lock | Thread: 9 | Board: 1 | Post: 0
+[2026-02-27 13:10:47] Erfolg: Aktion toggle_lock. Redirect zurück zu Thread 9
+[2026-02-27 13:44:32] Aktion: delete_thread | Thread: 17 | Board: 16 | Post: 0
+[2026-02-27 13:44:32] Erfolg: Thread 17 gelöscht. Redirect zu viewboard&id=16
+[2026-02-27 13:51:40] Aktion: delete_thread | Thread: 18 | Board: 1 | Post: 0
+[2026-02-27 13:51:40] Erfolg: Thread 18 gelöscht. Redirect zu viewboard&id=1
+[2026-02-27 14:51:35] Aktion: toggle_lock | Thread: 20 | Board: 4 | Post: 0
+[2026-02-27 14:51:35] Erfolg: Aktion toggle_lock. Redirect zurück zu Thread 20
+[2026-02-27 14:52:20] Aktion: toggle_lock | Thread: 20 | Board: 4 | Post: 0
+[2026-02-27 14:52:20] Erfolg: Aktion toggle_lock. Redirect zurück zu Thread 20
+[2026-02-27 14:53:10] Aktion: delete_thread | Thread: 20 | Board: 10 | Post: 0
+[2026-02-27 14:53:10] Erfolg: Thread 20 gelöscht. Redirect zu viewboard&id=10
+[2026-02-27 14:53:39] Aktion: delete_thread | Thread: 19 | Board: 10 | Post: 0
+[2026-02-27 14:53:39] Erfolg: Thread 19 gelöscht. Redirect zu viewboard&id=10
+[2026-02-27 14:56:59] Aktion: delete_post | Thread: 0 | Board: 0 | Post: 26
+[2026-02-27 14:56:59] Erfolg: Post 26 gelöscht.
+[2026-02-27 14:56:59] Erfolg: Aktion delete_post. Redirect zurück zu Thread 0
+[2026-02-27 16:15:48] Aktion: delete_thread | Thread: 21 | Board: 1 | Post: 0
+[2026-02-27 16:15:48] Erfolg: Thread 21 gelöscht. Redirect zu viewboard&id=1
+[2026-02-27 17:39:37] Aktion: delete_thread | Thread: 25 | Board: 18 | Post: 0
+[2026-02-27 17:39:37] Erfolg: Thread 25 gelöscht. Redirect zu viewboard&id=18
+[2026-02-27 20:17:14] Aktion: delete_thread | Thread: 24 | Board: 18 | Post: 0
+[2026-02-27 20:17:14] Erfolg: Thread 24 gelöscht. Redirect zu viewboard&id=18
+[2026-02-27 20:24:47] Aktion: delete_thread | Thread: 26 | Board: 10 | Post: 0
+[2026-02-27 20:24:47] Erfolg: Thread 26 gelöscht. Redirect zu viewboard&id=10
+[2026-02-28 15:49:01] Aktion: delete_post | Thread: 0 | Board: 0 | Post: 10
+[2026-02-28 15:49:01] Erfolg: Post 10 gelöscht.
+[2026-02-28 15:49:01] Erfolg: Aktion delete_post. Redirect zurück zu Thread 0
