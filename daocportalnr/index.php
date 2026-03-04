@@ -1,8 +1,11 @@
 <?php
 /**
  * DAoC Portal NR - Server Status Page
- * Version: 2.1.3 - ZIP Hash Change Detection
+ * Version: 2.1.4 - Live Player Count
  */
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 require_once('../includes/db.php'); 
 if (session_status() === PHP_SESSION_NONE) { 
     session_set_cookie_params(0, '/'); 
@@ -15,21 +18,22 @@ $check = $db->prepare("SELECT last_ping FROM launcher_ips WHERE ip_address = ? A
 $check->execute([$user_ip]);
 if ($check->fetch()) { $launcher_ready = true; }
 
-/**
- * Optimierter Server-Check
- */
 function checkServer($ip, $port) {
-    if (strpos($ip, '127.') === 0 || $ip === 'localhost') {
-        return false; 
-    }
-    $errno = 0;
-    $errstr = "";
-    $fp = @fsockopen($ip, $port, $errno, $errstr, 0.3); 
-    if ($fp) { 
-        fclose($fp); 
-        return true; 
-    } 
+    if (strpos($ip, '127.') === 0 || $ip === 'localhost') return false;
+    $errno = 0; $errstr = "";
+    $fp = @fsockopen($ip, $port, $errno, $errstr, 0.3);
+    if ($fp) { fclose($fp); return true; }
     return false;
+}
+
+// Spieleranzahl live aus DOL holen und in daoc_servers aktualisieren
+$onlineCount = 0;
+try {
+    $onlineCount = (int)$db->query("SELECT COUNT(*) FROM account WHERE LastLogin > NOW() - INTERVAL 10 MINUTE")->fetchColumn();
+    $db->prepare("UPDATE daoc_servers SET player_count = ? WHERE is_active = 1")->execute([$onlineCount]);
+} catch (Exception $e) {
+    // Fehler loggen aber Seite trotzdem laden
+    error_log("[DAoCPortalNR] player_count Fehler: " . $e->getMessage());
 }
 
 $stmt = $db->query("SELECT * FROM daoc_servers WHERE is_active = 1 ORDER BY server_name ASC");
@@ -58,9 +62,9 @@ $is_logged_in = isset($_SESSION['portal_user_id']);
         .account-box { background: #0d0d0d; padding: 15px; border-bottom: 1px solid #1a1a1a; display: flex; justify-content: center; gap: 20px; align-items: center; }
         .account-box label { font-family: 'Cinzel'; font-size: 10px; color: #555; }
         .account-box input { background: #000; border: 1px solid #222; color: #c5a059; padding: 6px 10px; font-family: 'Roboto Mono'; font-size: 12px; }
-        .launcher-notice { max-width: 1000px; margin: 15px auto; padding: 10px; text-align: center; font-family: 'Cinzel'; font-size: 11px; border: 1px solid #222; }
-        .launcher-ready { background: rgba(0, 255, 0, 0.03); color: #00ff00; border-color: rgba(0, 255, 0, 0.15); }
-        .launcher-missing { background: rgba(197, 160, 89, 0.03); color: #c5a059; border-color: rgba(197, 160, 89, 0.2); }
+        .launcher-notice { max-width: 1000px; margin: 15px auto; padding: 10px; text-align: center; font-family: 'Cinzel'; font-size: 11px; border: none; background: transparent; }
+        .launcher-ready { color: #00ff00; }
+        .launcher-missing { color: #c5a059; }
         .server-grid { display: grid; grid-template-columns: 1fr; background: #1a1a1a; }
         .server-row { display: grid; grid-template-columns: 2fr 100px 80px 80px 120px 120px; background: #0c0c0c; padding: 18px 25px; align-items: center; transition: 0.2s; border-bottom: 1px solid #151515; }
         .server-row:hover { background: #111; box-shadow: inset 4px 0 0 #c5a059; }
@@ -68,6 +72,11 @@ $is_logged_in = isset($_SESSION['portal_user_id']);
         .srv-name a { color: #c5a059; font-weight: bold; font-family: 'Cinzel', serif; font-size: 1.1em; letter-spacing: 1px; text-decoration: none; transition: 0.3s; }
         .srv-name a:hover { color: #fff; text-shadow: 0 0 10px #c5a059; }
         .val { font-family: 'Roboto Mono', monospace; color: #aaa; }
+
+        /* Player count – pulst kurz auf wenn sich der Wert ändert */
+        .player-count { font-family: 'Roboto Mono', monospace; color: #aaa; transition: color 0.4s; }
+        .player-count.updated { color: #c5a059; }
+
         .status-pill { padding: 5px; border-radius: 1px; font-size: 9px; font-weight: bold; text-align: center; letter-spacing: 1px; border: 1px solid #222; }
         .online { color: #00ff00; border-color: rgba(0, 255, 0, 0.2); }
         .offline { color: #ff4444; border-color: rgba(255, 0, 0, 0.2); }
@@ -80,6 +89,7 @@ $is_logged_in = isset($_SESSION['portal_user_id']);
 <body>
 
 <div class="top-nav">
+	<a href="portal_faq.php" class="nav-btn"><i class="fas fa-question-circle"></i> FAQ</a>
     <?php if($is_logged_in): ?>
         <a href="shard_manager.php" class="nav-btn active"><i class="fas fa-crown"></i> MY DASHBOARD</a>
     <?php endif; ?>
@@ -95,7 +105,6 @@ $is_logged_in = isset($_SESSION['portal_user_id']);
 <div class="portal-wrapper">
     <div class="portal-header">
         <h1>DAoC Portal <span style="color: #fff;">NR</span></h1>
-        <div class="subtitle">Nostalgic Revival Edition</div>
     </div>
 
     <div class="account-box">
@@ -127,8 +136,12 @@ $is_logged_in = isset($_SESSION['portal_user_id']);
                     <?php echo htmlspecialchars($srv['server_name']); ?>
                 </a>
             </div>
-            
-            <div class="val"><?php echo (int)$srv['player_count']; ?></div>
+
+            <!-- data-id damit JS die Zelle per Server-ID findet -->
+            <div class="player-count" data-id="<?php echo $srv['id']; ?>">
+                <?php echo (int)$srv['player_count']; ?>
+            </div>
+
             <div class="val"><?php echo htmlspecialchars($srv['xp_rate']); ?></div>
             <div class="val"><?php echo htmlspecialchars($srv['rp_rate']); ?></div>
             
@@ -160,8 +173,7 @@ $is_logged_in = isset($_SESSION['portal_user_id']);
 </div>
 
 <div class="nrfooter">
-    &copy; <?php echo date("Y"); ?> DAOC PORTAL NR 1.0<br>
-    <span style="font-size: 8px; color: #222; margin-top: 5px; display: block;">Authorized Access Only</span>
+    &copy; <?php echo date("Y"); ?> PORTAL NOSTALGIC REVIVAL 1.0<br>
 </div>
 
 <script>
@@ -169,7 +181,7 @@ $is_logged_in = isset($_SESSION['portal_user_id']);
 function launch(ip, port, version, shardName, clientZipUrl, zipHash) {
     const user = document.getElementById('acc_name').value;
     const pass = document.getElementById('acc_pass').value;
-    if (!user || !pass) { alert("Bitte Account und Passwort eingeben."); return; }
+    if (!user || !pass) { alert("Insert Account name and PW!"); return; }
     const uri = "daocnr://" + ip + ":" + port + 
                 "/" + encodeURIComponent(version) + 
                 "/" + encodeURIComponent(shardName) + 
@@ -179,6 +191,32 @@ function launch(ip, port, version, shardName, clientZipUrl, zipHash) {
                 "/" + encodeURIComponent(pass);
     window.location.href = uri;
 }
+
+// Live Player Count – fragt player_counts.php alle 30 Sekunden ab
+function refreshPlayerCounts() {
+    fetch('player_counts.php')
+        .then(r => r.json())
+        .then(data => {
+            document.querySelectorAll('.player-count[data-id]').forEach(el => {
+                const id = el.dataset.id;
+                if (data[id] !== undefined) {
+                    const newVal = parseInt(data[id]);
+                    const oldVal = parseInt(el.textContent);
+                    if (newVal !== oldVal) {
+                        el.textContent = newVal;
+                        // Kurz gold aufleuchten wenn sich der Wert geändert hat
+                        el.classList.add('updated');
+                        setTimeout(() => el.classList.remove('updated'), 1500);
+                    }
+                }
+            });
+        })
+        .catch(() => {}); // Kein Fehler anzeigen wenn Endpoint nicht erreichbar
+}
+
+// Sofort beim Laden + dann alle 30 Sekunden
+refreshPlayerCounts();
+setInterval(refreshPlayerCounts, 30000);
 </script>
 </body>
 </html>
